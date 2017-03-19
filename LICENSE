@@ -1,4 +1,4 @@
-The SimCenter Agave Client Tester, in source and binary forms, is copyright "The University of Notre Dame" and "The Regents of the University of California" and is licensed under the following copyright and license:
+The SimCenter Agave Client Interface, in source and binary forms, is copyright "The University of Notre Dame" and "The Regents of the University of California" and is licensed under the following copyright and license:
 
 BSD 3-Clause License
 
@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ------------------------------------------------------------------------------------
 
-The SimCenter Agave Client Tester makes use of the Qt packages (unmodified): core and network
+Programs which use the SimCenter Agave Client Interface, unmodified and as intended, will make use of at least the following Qt packages (unmodified): core and network. Persons considering use of the SimCenter Agave Client Interface should note the licensing conditions of Qt, described below.
 
 Qt is copyright "The Qt Company Ltd" and licensed under the GNU Lesser General Public License (version 3) which references the GNU General Public License (version 3)
 
