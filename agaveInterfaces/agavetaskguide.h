@@ -33,43 +33,73 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#ifndef AUTHFORM_H
-#define AUTHFORM_H
+#ifndef AGAVETASKGUIDE_H
+#define AGAVETASKGUIDE_H
 
-#include <QWidget>
-#include <QLabel>
-#include <QLineEdit>
+#include <QMap>
+#include <QString>
+#include <QStringList>
 
-enum class RequestState;
-class VWTinterfaceDriver;
-class RemoteDataInterface;
+enum class AgaveRequestType;
+enum class AgaveState;
 
-namespace Ui {
-class AuthForm;
-}
+//TODO: This whole class, needs more documentation in particular
+enum class AuthHeaderType {NONE, PASSWD, CLIENT, TOKEN, REFRESH};
 
-class AuthForm : public QWidget
+class AgaveTaskGuide
 {
-    Q_OBJECT
-
 public:
-    explicit AuthForm(RemoteDataInterface * newRemoteHandle, VWTinterfaceDriver * theDriver, QWidget *parent = 0);
-    ~AuthForm();
+    explicit AgaveTaskGuide();
+    explicit AgaveTaskGuide(QString newID, AgaveRequestType reqType);
 
-private slots:
-    void performAuth();
-    void exitAuth();
-    void getCopyingInfo();
-    void getAuthReply(RequestState authReply);
+    void setURLsuffix(QString newValue);
+    void setHeaderType(AuthHeaderType newValue);
+
+    void setTokenFormat(bool newSetting);
+    void setDynamicURLParams(QString format, int numSubs);
+    void setPostParams(QString format, int numSubs);
+    void setAsInternal();
+    void setStoreParam(int paramList, int elementToStore);
+
+    QString getTaskID();
+    QString getURLsuffix();
+    AgaveRequestType getRequestType();
+    AuthHeaderType getHeaderType();
+    QByteArray fillPostArgList(QStringList *argList = NULL);
+    QByteArray fillURLArgList(QStringList * argList = NULL);
+    bool isTokenFormat();
+    bool isInternal();
+
+    bool hasStoredParam();
+    int getStoredParamList();
+    int getStoredParamElement();
+
+    bool usesPostParms();
+    bool usesURLParams();
 
 private:
-    Ui::AuthForm *ui;
-    RemoteDataInterface * theConnection;
-    VWTinterfaceDriver * myDriver;
+    QString taskId;
 
-    QLabel * errorTextElement;
-    QLineEdit * unameInput;
-    QLineEdit * passwordInput;
+    QString URLsuffix = "";
+    AgaveRequestType requestType;
+    AuthHeaderType headerType = AuthHeaderType::NONE;
+
+    QByteArray fillAnyArgList(QStringList *argList, int numVals, QString strFormat);
+
+    bool internalTask = false;
+    bool usesTokenFormat = false;
+    bool needsPostParams = false;
+    bool needsURLParams = false;
+
+    bool storeParamInReply = false;
+    int storeParamList = 0;
+    int storeParamElement = 0;
+
+    QString postFormat = "";
+    int numPostVals = 0;
+
+    QString dynURLFormat = "";
+    int numDynURLVals = 0;
 };
 
-#endif // AUTHFORM_H
+#endif // AGAVETASKGUIDE_H
