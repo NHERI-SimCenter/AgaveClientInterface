@@ -81,11 +81,18 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
 
     haveReplyStore = true;
     pendingReply = replyState;
-    pendingParam = *param1;
+    if (param1 == NULL)
+    {
+        pendingParam = "";
+    }
+    else
+    {
+        pendingParam = *param1;
+    }
 
     QTimer * quickTimer = new QTimer((QObject*)this);
     QObject::connect(quickTimer, SIGNAL(timeout()), this, SLOT(rawTaskComplete()));
-    quickTimer->start(2);
+    quickTimer->start(1);
 }
 
 void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * param1)
@@ -104,6 +111,11 @@ void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * para
     if (myGuide->getTaskID() == "fullAuth")
     {
         emit haveAuthReply(replyState);
+        return;
+    }
+    if (myGuide->getTaskID() == "waitAll")
+    {
+        emit connectionsClosed(replyState);
         return;
     }
     myManager->forwardAgaveError("Passthru reply not implemented");
@@ -174,6 +186,8 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
 
 void AgaveTaskReply::rawTaskComplete()
 {
+    this->deleteLater();
+
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
     {
         if (haveReplyStore == false)
@@ -187,27 +201,23 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }
 
-    this->deleteLater();
+    if ((myManager->inShutdownMode()) && (myGuide->getTaskID() != "authRevoke"))
+    {
+        qDebug("Request during shutdown ignored");
+        return;
+    }
 
     QNetworkReply * testReply = (QNetworkReply*)QObject::sender();
     if (testReply != myReplyObject)
     {
         myManager->forwardAgaveError("Network reply does not match agave reply");
         return;
-    }
+    }    
 
     //If this task is an INTERNAL task, then the result is redirected to the manager
     if (myGuide->isInternal())
     {
         emit haveInternalTaskReply(this, myReplyObject);
-        return;
-    }
-
-    if (myGuide->getTaskID() == "authRevoke")
-    {
-        //As far as I can tell, token revokes give no reply
-        qDebug("Token revoke complete.");
-        emit connectionsClosed(RequestState::GOOD);
         return;
     }
 

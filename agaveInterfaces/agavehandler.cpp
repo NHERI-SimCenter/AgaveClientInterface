@@ -49,12 +49,34 @@ AgaveHandler::AgaveHandler(QObject * parent) :
     clearAllAuthTokens();
 
     setupTaskGuideList();
+    QObject::connect(&networkHandle, SIGNAL(finished(QNetworkReply*)), this, SLOT(finishedOneTask(QNetworkReply*)));
+}
+
+void AgaveHandler::finishedOneTask(QNetworkReply *)
+{
+    pendingRequestCount--;
+    if (pendingRequestCount < 0)
+    {
+        emit sendFatalErrorMessage("Request count is less than 0");
+    }
+    if (pendingRequestCount == 0)
+    {
+        emit finishedAllTasks();
+    }
 }
 
 AgaveHandler::~AgaveHandler()
 {
-    //TODO: need a better way to insure that all tokens are revoked
-    closeAllConnections();
+    if ((performingShutdown == true) || (authGained == true))
+    {
+        emit sendFatalErrorMessage("Agave Handler destroyed without proper shutdown");
+    }
+    //Note: consider deletion of task guide list
+}
+
+bool AgaveHandler::inShutdownMode()
+{
+    return performingShutdown;
 }
 
 RemoteDataReply * AgaveHandler::setCurrentRemoteWorkingDirectory(QString cd)
@@ -206,6 +228,9 @@ RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteNa
 
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QString jobParameters, QString remoteWorkingDir)
 {
+    //Revoke should only be done through the shutdown sequence
+    if (jobName == "authRevoke") return NULL;
+
     QString pwd = getPathReletiveToCWD(remoteWorkingDir);
     QStringList dirList = {pwd};
     QStringList paramListTmp = jobParameters.split(' ');
@@ -223,14 +248,31 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QString jobParamet
 
 RemoteDataReply * AgaveHandler::closeAllConnections()
 {
-    //TODO: The sequence of shutdown steps needs to be rethought
-    qDebug("Shutdown sequence begins");
+    //Note: relogin is not yet supported
+    AgaveTaskReply * waitHandle = new AgaveTaskReply(retriveTaskGuide("waitAll"),NULL,this,(QObject *)this);
+    performingShutdown = true;
+    if (waitHandle == NULL)
+    {
+        emit sendFatalErrorMessage("Unable to create shutdown object");
+    }
     if ((clientEncoded != "") && (token != ""))
     {
-        return performAgaveQuery("authRevoke", token);
+        qDebug("Closing all connections sequence begins");
+        performAgaveQuery("authRevoke", token);
+        //maybe TODO: Remove client entry?
     }
-    //maybe TODO: Remove client entry?
-    return NULL;
+    else
+    {
+        qDebug("Not logged in: quick shutdown");
+        clearAllAuthTokens();
+    }
+    QObject::connect(this, SIGNAL(finishedAllTasks()), waitHandle, SLOT(rawTaskComplete()));
+    if (pendingRequestCount == 0)
+    {
+        waitHandle->delayedPassThruReply(RequestState::GOOD);
+    }
+
+    return waitHandle;
 }
 
 void AgaveHandler::clearAllAuthTokens()
@@ -257,6 +299,9 @@ void AgaveHandler::setupTaskGuideList()
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("fullAuth", AgaveRequestType::AGAVE_NONE);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("waitAll", AgaveRequestType::AGAVE_NONE);
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("authStep1", AgaveRequestType::AGAVE_GET);
@@ -298,6 +343,7 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setURLsuffix(QString("/revoke"));
     toInsert->setHeaderType(AuthHeaderType::CLIENT);
     toInsert->setPostParams("token=%1",1);
+    toInsert->setAsInternal();
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("dirListing", AgaveRequestType::AGAVE_GET);
@@ -396,6 +442,13 @@ void AgaveHandler::forwardReplyToParent(AgaveTaskReply * agaveReply, RequestStat
 
 void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply * rawReply)
 {
+    if (agaveReply->getTaskGuide()->getTaskID() == "authRevoke")
+    {
+        qDebug("Auth revoke procedure complete");
+        clearAllAuthTokens();
+        return;
+    }
+
     const QByteArray replyText = rawReply->readAll();
 
     QJsonParseError parseError;
@@ -579,6 +632,12 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList 
         return NULL;
     }
 
+    if ((performingShutdown) && (queryName != "authRevoke"))
+    {
+        qDebug("Rejecting request given during shutdown.");
+        return NULL;
+    }
+
     AgaveTaskGuide * taskGuide = retriveTaskGuide(queryName);
 
     QNetworkReply * qReply = internalQueryMethod(taskGuide, paramList0, paramList1);
@@ -587,6 +646,7 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList 
     {
         return NULL;
     }
+    pendingRequestCount++;
 
     QObject * parentObj = (QObject *) this;
     if (parentReq != NULL)
