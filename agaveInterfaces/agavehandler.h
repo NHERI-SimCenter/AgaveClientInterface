@@ -93,9 +93,14 @@ public:
 
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
+    bool inShutdownMode();
+
+signals:
+    void finishedAllTasks();
 
 private slots:
     void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
+    void finishedOneTask(QNetworkReply *reply);
 
 private:
     AgaveTaskReply * performAgaveQuery(QString queryName, QObject * parentReq = NULL);
@@ -136,6 +141,8 @@ private:
 
     QString pwd = "";
 
+    int pendingRequestCount = 0;
+    bool performingShutdown = false;
     bool authGained = false;
     bool attemptingAuth = false;
 };
