@@ -175,3 +175,33 @@ bool AgaveTaskGuide::usesURLParams()
 {
     return needsURLParams;
 }
+
+void AgaveTaskGuide::setAgavePWDparam(QString newPWDparam)
+{
+    agavePWDparam = newPWDparam;
+}
+
+void AgaveTaskGuide::setAgaveParamList(QStringList newParamList)
+{
+    agaveParamList = newParamList;
+}
+
+void AgaveTaskGuide::setAgaveInputList(QStringList newInputList)
+{
+    agaveInputList = newInputList;
+}
+
+QString AgaveTaskGuide::getAgavePWDparam()
+{
+    return agavePWDparam;
+}
+
+QStringList AgaveTaskGuide::getAgaveParamList()
+{
+    return agaveParamList;
+}
+
+QStringList AgaveTaskGuide::getAgaveInputList()
+{
+    return agaveInputList;
+}

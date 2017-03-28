@@ -118,6 +118,7 @@ void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * para
         emit connectionsClosed(replyState);
         return;
     }
+
     myManager->forwardAgaveError("Passthru reply not implemented");
     return;
 }

@@ -133,7 +133,7 @@ public:
     virtual RemoteDataReply * uploadFile(QString loc, QString localFileName) = 0;
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName) = 0;
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QString jobParameters, QString remoteWorkingDir) = 0;
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
 signals:
     void sendFatalErrorMessage(QString errorText);

@@ -51,8 +51,11 @@
 #include <QHttpPart>
 #include <QFileInfo>
 #include <QStringList>
+#include <QList>
+#include <QMultiMap>
 
-enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE};
+enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
+enum class AgaveParamType {PARAM_STRING, PARAM_INT, PARAM_BOOL};
 
 class QNetworkReply;
 class AgaveTaskGuide;
@@ -89,11 +92,24 @@ public:
     virtual RemoteDataReply * uploadFile(QString loc, QString localFileName);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QString jobParameters, QString remoteWorkingDir);
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
+
+    //On Agave Apps:
+    //There are two ways to invoke Agave Apps,
+    //1) (Advanced) Directly, by using:
+    RemoteDataReply * invokeAgaveApp(QJsonDocument rawJSONinput);
+    //This also requires interfacing with the AgaveHandler at every invoke, and cuts down on the potential for polymorphism
+
+    //2)(Basic) (and allows for polymorphism for code other than setup)
+    //Register info on the Agave App's parameters, using:
+    void registerAgaveAppInfo(QString agaveAppName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
+    //After that, use the standard runRemoteJob, where jobName is the agaveAppName,
+    //the job parameters are a list matching the inputs/parameters given by parameterList and inputList
+    //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)
 
 signals:
     void finishedAllTasks();
