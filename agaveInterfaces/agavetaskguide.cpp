@@ -52,6 +52,11 @@ AgaveTaskGuide::AgaveTaskGuide(QString newID, AgaveRequestType reqType)
         //Agave Download takes one param: the local destination name
         setPostParams("%1", 1);
     }
+    else if (requestType == AgaveRequestType::AGAVE_PIPE_UPLOAD)
+    {
+        //Agave pipe upload takes one param, the full data to be piped
+        setPostParams("%1", 1);
+    }
 }
 
 QString AgaveTaskGuide::getTaskID()

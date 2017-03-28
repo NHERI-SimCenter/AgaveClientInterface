@@ -115,9 +115,7 @@ QString AgaveHandler::getPathReletiveToCWD(QString inputPath)
             }
             else if (!(*itr).isEmpty())
             {
-                QString newStr = "/";
-                newStr = newStr.append(*itr);
-                retList.append(newStr);
+                retList.append(*itr);
             }
         }
     }
@@ -255,6 +253,11 @@ RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteNa
     return (RemoteDataReply *) performAgaveQuery("fileDownload", toCheck, localDest);
 }
 
+RemoteDataReply * AgaveHandler::getAgaveAppList()
+{
+    return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
+}
+
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
 {
     //This function is only for Agave Jobs
@@ -270,15 +273,10 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
 
     QJsonDocument rawJSONinput;
     QJsonObject rootObject;
-    rawJSONinput.setObject(rootObject);
     rootObject.insert("appId",QJsonValue(jobName));
     rootObject.insert("name",QJsonValue(jobName.append("-run")));
     QJsonObject inputList;
-    QJsonValue inputListValue(inputList);
     QJsonObject paramList;
-    QJsonValue paramListValue(paramList);
-    rootObject.insert("inputs",inputListValue);
-    rootObject.insert("parameters",paramListValue);
 
     QStringList expectedInputs = guideToCheck->getAgaveInputList();
     QStringList expectedParams = guideToCheck->getAgaveParamList();
@@ -323,7 +321,13 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
             objectToAddTo->insert(*itr,QJsonValue(valueList.at(0)));
         }
     }
+    QJsonValue inputListValue(inputList);
+    QJsonValue paramListValue(paramList);
+    rootObject.insert("inputs",inputListValue);
+    rootObject.insert("parameters",paramListValue);
+    rawJSONinput.setObject(rootObject);
 
+    qDebug("%s",qPrintable(rawJSONinput.toJson()));
     return (RemoteDataReply *) invokeAgaveApp(rawJSONinput);
 }
 
@@ -498,6 +502,11 @@ void AgaveHandler::setupTaskGuideList()
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("agaveAppStart", AgaveRequestType::AGAVE_PIPE_UPLOAD);
+    toInsert->setURLsuffix(QString("/jobs/v2"));
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("getAgaveList", AgaveRequestType::AGAVE_GET);
     toInsert->setURLsuffix(QString("/apps/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
@@ -862,10 +871,10 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
             return NULL;
         }
         qDebug("URL Req: %s", qPrintable(realURLsuffix));
-        QByteArray emptyPostData;
+        QByteArray filePostData = fullFileName.toLatin1();
 
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
-                         authHeader, emptyPostData, fileHandle);
+                         authHeader, filePostData, fileHandle);
     }
     else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
     {
@@ -886,6 +895,19 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
                          authHeader, emptyPostData);
     }
+    else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD)
+    {
+        qDebug("Post Data: \n%s", qPrintable(clientPostData));
+        QByteArray * uploadData = new QByteArray(clientPostData);
+        //TODO: find a way to clean up the uploadData when no longer needed
+        QBuffer * pipedData = new QBuffer(uploadData);
+        pipedData->open(QBuffer::ReadOnly);
+        qDebug("URL Req: %s", qPrintable(realURLsuffix));
+        QByteArray filePostData = "JSON";
+
+        return finalizeAgaveRequest(taskGuide, realURLsuffix,
+                         authHeader, filePostData, pipedData);
+    }
     else
     {
         emit sendFatalErrorMessage("Non-existant Agave request type requested.");
@@ -895,7 +917,7 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
     return NULL;
 }
 
-QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader, QByteArray postData, QFile * fileHandle)
+QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader, QByteArray postData, QIODevice * fileHandle)
 {
     QNetworkReply * clientReply = NULL;
 
@@ -944,15 +966,14 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
     {
         clientReply = networkHandle.deleteResource(*clientRequest);
     }
-    else if (theGuide->getRequestType() == AgaveRequestType::AGAVE_UPLOAD)
+    else if ((theGuide->getRequestType() == AgaveRequestType::AGAVE_UPLOAD) || (theGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD))
     {
         QHttpMultiPart * fileUpload = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
         QHttpPart filePart;
         filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/octet-strem"));
         QString tempString = "form-data; name=\"fileToUpload\"; filename=\"%1\"";
-        QFileInfo fileInfo(fileHandle->fileName());
-        tempString = tempString.arg(fileInfo.fileName());
+        tempString = tempString.arg(QString(postData));
         filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(tempString));
 
         filePart.setBodyDevice(fileHandle);

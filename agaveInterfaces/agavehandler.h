@@ -47,6 +47,7 @@
 #include <QSslConfiguration>
 #include <QJsonDocument>
 #include <QFile>
+#include <QBuffer>
 #include <QHttpMultiPart>
 #include <QHttpPart>
 #include <QFileInfo>
@@ -111,6 +112,8 @@ public:
     //the job parameters are a list matching the inputs/parameters given by parameterList and inputList
     //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)
 
+    //For debugging purposes, to retrive the list of availalbe Agave Apps:
+    RemoteDataReply * getAgaveAppList();
 signals:
     void finishedAllTasks();
 
@@ -124,7 +127,7 @@ private:
     AgaveTaskReply * performAgaveQuery(QString queryName, QString param1, QString param2, QObject * parentReq = NULL);
     AgaveTaskReply * performAgaveQuery(QString queryName, QStringList * paramList0 = NULL, QStringList * paramList1 = NULL, QObject * parentReq = NULL);
     QNetworkReply * internalQueryMethod(AgaveTaskGuide * theGuide, QStringList * paramList1 = NULL, QStringList * paramList2 = NULL);
-    QNetworkReply * finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader = NULL, QByteArray postData = "", QFile * fileHandle = NULL);
+    QNetworkReply * finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader = NULL, QByteArray postData = "", QIODevice * fileHandle = NULL);
 
     void forwardReplyToParent(AgaveTaskReply * agaveReply, RequestState replyState, QString * param1 = NULL);
 
