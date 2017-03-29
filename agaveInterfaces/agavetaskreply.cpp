@@ -226,6 +226,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
     {
+        //TODO: consider a better way of doing this for larger files
         QFile * fileHandle = new QFile(dataStore);
         if (!fileHandle->open(QIODevice::WriteOnly))
         {
@@ -233,8 +234,9 @@ void AgaveTaskReply::rawTaskComplete()
             fileHandle->deleteLater();
             return;
         }
-        fileHandle->write(replyText.toStdString().c_str());
-        //TODO: There may be errors here we need to catch
+
+        fileHandle->write(replyText);
+        //TODO: There may be more errors here we need to catch
 
         fileHandle->close();
         fileHandle->deleteLater();
