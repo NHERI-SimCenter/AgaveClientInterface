@@ -62,6 +62,7 @@ public:
     void setAsInternal();
     void setStoreParam(int paramList, int elementToStore);
 
+    void setAgaveFullName(QString newFullName);
     void setAgavePWDparam(QString newPWDparam);
     void setAgaveParamList(QStringList newParamList);
     void setAgaveInputList(QStringList newInputList);
@@ -79,6 +80,7 @@ public:
     int getStoredParamList();
     int getStoredParamElement();
 
+    QString getAgaveFullName();
     QString getAgavePWDparam();
     QStringList getAgaveParamList();
     QStringList getAgaveInputList();
@@ -110,6 +112,7 @@ private:
     QString dynURLFormat = "";
     int numDynURLVals = 0;
 
+    QString agaveFullName;
     QString agavePWDparam = "";
     QStringList agaveParamList;
     QStringList agaveInputList;

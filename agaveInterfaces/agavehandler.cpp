@@ -270,11 +270,17 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
     {
         return NULL;
     }
+    QString fullAgaveName = guideToCheck->getAgaveFullName();
+    if (fullAgaveName.isEmpty())
+    {
+        emit sendFatalErrorMessage("Agave App does not have a full name");
+        return NULL;
+    }
 
     QJsonDocument rawJSONinput;
     QJsonObject rootObject;
-    rootObject.insert("appId",QJsonValue(jobName));
-    rootObject.insert("name",QJsonValue(jobName.append("-run")));
+    rootObject.insert("appId",QJsonValue(fullAgaveName));
+    rootObject.insert("name",QJsonValue(fullAgaveName.append("-run")));
     QJsonObject inputList;
     QJsonObject paramList;
 
@@ -336,9 +342,10 @@ RemoteDataReply * AgaveHandler::invokeAgaveApp(QJsonDocument rawJSONinput)
     return (RemoteDataReply *) performAgaveQuery("agaveAppStart", QString(rawJSONinput.toJson()));
 }
 
-void AgaveHandler::registerAgaveAppInfo(QString agaveAppName, QStringList parameterList, QStringList inputList, QString workingDirParameter)
+void AgaveHandler::registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter)
 {
     AgaveTaskGuide * toInsert = new AgaveTaskGuide(agaveAppName, AgaveRequestType::AGAVE_APP);
+    toInsert->setAgaveFullName(fullAgaveName);
     toInsert->setAgaveParamList(parameterList);
     toInsert->setAgaveInputList(inputList);
     toInsert->setAgavePWDparam(workingDirParameter);

@@ -107,7 +107,7 @@ public:
 
     //2)(Basic) (and allows for polymorphism for code other than setup)
     //Register info on the Agave App's parameters, using:
-    void registerAgaveAppInfo(QString agaveAppName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
+    void registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
     //After that, use the standard runRemoteJob, where jobName is the agaveAppName,
     //the job parameters are a list matching the inputs/parameters given by parameterList and inputList
     //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)

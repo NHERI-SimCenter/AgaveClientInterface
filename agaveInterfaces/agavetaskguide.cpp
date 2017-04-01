@@ -181,6 +181,11 @@ bool AgaveTaskGuide::usesURLParams()
     return needsURLParams;
 }
 
+void AgaveTaskGuide::setAgaveFullName(QString newFullName)
+{
+    agaveFullName = newFullName;
+}
+
 void AgaveTaskGuide::setAgavePWDparam(QString newPWDparam)
 {
     agavePWDparam = newPWDparam;
@@ -194,6 +199,11 @@ void AgaveTaskGuide::setAgaveParamList(QStringList newParamList)
 void AgaveTaskGuide::setAgaveInputList(QStringList newInputList)
 {
     agaveInputList = newInputList;
+}
+
+QString AgaveTaskGuide::getAgaveFullName()
+{
+    return agaveFullName;
 }
 
 QString AgaveTaskGuide::getAgavePWDparam()
