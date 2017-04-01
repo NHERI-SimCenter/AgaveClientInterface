@@ -37,9 +37,6 @@
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
 
-//TODO: there are some holes in the exchange of error information.
-//TODO: need to tighten this
-
 //TODO: need to do more double checking of valid file paths
 
 AgaveHandler::AgaveHandler(QObject * parent) :
@@ -100,33 +97,63 @@ RemoteDataReply * AgaveHandler::setCurrentRemoteWorkingDirectory(QString cd)
 
 QString AgaveHandler::getPathReletiveToCWD(QString inputPath)
 {
-    //returning an empty string is an invalid path
     //TODO: check validity of input path
-    //TODO: calculate path as reletive to CWD
-    //TODO: or return input, if it is a full path
-
     QString cleanedInput = FileMetaData::cleanPathSlashes(inputPath);
+
+    QStringList retList;
 
     if (inputPath.at(0) == '/')
     {
-        return cleanedInput;
-    }
+        QStringList oldList = cleanedInput.split('/');
 
-    //TODO: implement .. later
-    QStringList oldList = pwd.split('/');
-    QStringList newList = cleanedInput.split('/');
-    QString ret;
-
-    for (auto itr = oldList.cbegin(); itr != oldList.cend(); itr++)
-    {
-        if (!(*itr).isEmpty())
+        for (auto itr = oldList.cbegin(); itr != oldList.cend(); itr++)
         {
-            ret.append('/');
-            ret.append(*itr);
+            if ((*itr) == ".") {}
+            else if ((*itr) == "..")
+            {
+                retList.removeLast();
+            }
+            else if (!(*itr).isEmpty())
+            {
+                retList.append(*itr);
+            }
+        }
+    }
+    else
+    {
+        QStringList oldList = pwd.split('/');
+        QStringList newList = cleanedInput.split('/');
+
+        for (auto itr = oldList.cbegin(); itr != oldList.cend(); itr++)
+        {
+            if ((*itr) == ".") {}
+            else if ((*itr) == "..")
+            {
+                retList.removeLast();
+            }
+            else if (!(*itr).isEmpty())
+            {
+                retList.append(*itr);
+            }
+        }
+
+        for (auto itr = newList.cbegin(); itr != newList.cend(); itr++)
+        {
+            if ((*itr) == ".") {}
+            else if ((*itr) == "..")
+            {
+                retList.removeLast();
+            }
+            else if (!(*itr).isEmpty())
+            {
+                retList.append(*itr);
+            }
         }
     }
 
-    for (auto itr = newList.cbegin(); itr != newList.cend(); itr++)
+    QString ret;
+
+    for (auto itr = retList.cbegin(); itr != retList.cend(); itr++)
     {
         if (!(*itr).isEmpty())
         {
@@ -226,24 +253,103 @@ RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteNa
     return (RemoteDataReply *) performAgaveQuery("fileDownload", toCheck, localDest);
 }
 
-RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QString jobParameters, QString remoteWorkingDir)
+RemoteDataReply * AgaveHandler::getAgaveAppList()
 {
-    //Revoke should only be done through the shutdown sequence
-    if (jobName == "authRevoke") return NULL;
+    return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
+}
 
-    QString pwd = getPathReletiveToCWD(remoteWorkingDir);
-    QStringList dirList = {pwd};
-    QStringList paramListTmp = jobParameters.split(' ');
-    QStringList paramList;
-
-    for (auto itr = paramListTmp.cbegin(); itr != paramListTmp.cend(); itr++)
+RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
+{
+    //This function is only for Agave Jobs
+    AgaveTaskGuide * guideToCheck = retriveTaskGuide(jobName);
+    if (guideToCheck == NULL)
     {
-        if (!(*itr).isEmpty())
+        return NULL;
+    }
+    if (guideToCheck->getRequestType() != AgaveRequestType::AGAVE_APP)
+    {
+        return NULL;
+    }
+    QString fullAgaveName = guideToCheck->getAgaveFullName();
+    if (fullAgaveName.isEmpty())
+    {
+        emit sendFatalErrorMessage("Agave App does not have a full name");
+        return NULL;
+    }
+
+    QJsonDocument rawJSONinput;
+    QJsonObject rootObject;
+    rootObject.insert("appId",QJsonValue(fullAgaveName));
+    rootObject.insert("name",QJsonValue(fullAgaveName.append("-run")));
+    QJsonObject inputList;
+    QJsonObject paramList;
+
+    QStringList expectedInputs = guideToCheck->getAgaveInputList();
+    QStringList expectedParams = guideToCheck->getAgaveParamList();
+
+    if ((!guideToCheck->getAgavePWDparam().isEmpty()) && (!remoteWorkingDir.isEmpty()))
+    {
+        //TODO: check path
+        QString realPath = getPathReletiveToCWD(remoteWorkingDir);
+        jobParameters.insert(guideToCheck->getAgavePWDparam(),realPath);
+    }
+
+    QList<QString> keyList = jobParameters.keys();
+    for (auto itr = keyList.cbegin(); itr != keyList.cend(); itr++)
+    {
+        QList<QString> valueList = jobParameters.values(*itr);
+        QJsonObject * objectToAddTo;
+
+        if (expectedParams.contains(*itr))
         {
-            paramList.append(*itr);
+            objectToAddTo = &paramList;
+        }
+        else if (expectedInputs.contains(*itr))
+        {
+            objectToAddTo = &inputList;
+        }
+        else
+        {
+            return NULL;
+        }
+
+        if (valueList.size() > 1)
+        {
+            QJsonArray inList;
+            for (int i = 0; i < valueList.size(); i++)
+            {
+                inList.append(QJsonValue(valueList.at(i)));
+            }
+            objectToAddTo->insert(*itr,QJsonValue(inList));
+        }
+        else
+        {
+            objectToAddTo->insert(*itr,QJsonValue(valueList.at(0)));
         }
     }
-    return (RemoteDataReply *) performAgaveQuery(jobName,&dirList,&paramList);
+    QJsonValue inputListValue(inputList);
+    QJsonValue paramListValue(paramList);
+    rootObject.insert("inputs",inputListValue);
+    rootObject.insert("parameters",paramListValue);
+    rawJSONinput.setObject(rootObject);
+
+    qDebug("%s",qPrintable(rawJSONinput.toJson()));
+    return (RemoteDataReply *) invokeAgaveApp(rawJSONinput);
+}
+
+RemoteDataReply * AgaveHandler::invokeAgaveApp(QJsonDocument rawJSONinput)
+{
+    return (RemoteDataReply *) performAgaveQuery("agaveAppStart", QString(rawJSONinput.toJson()));
+}
+
+void AgaveHandler::registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter)
+{
+    AgaveTaskGuide * toInsert = new AgaveTaskGuide(agaveAppName, AgaveRequestType::AGAVE_APP);
+    toInsert->setAgaveFullName(fullAgaveName);
+    toInsert->setAgaveParamList(parameterList);
+    toInsert->setAgaveInputList(inputList);
+    toInsert->setAgavePWDparam(workingDirParameter);
+    insertAgaveTaskGuide(toInsert);
 }
 
 RemoteDataReply * AgaveHandler::closeAllConnections()
@@ -400,6 +506,16 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setPostParams("action=move&path=%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     toInsert->setStoreParam(0,0);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("agaveAppStart", AgaveRequestType::AGAVE_PIPE_UPLOAD);
+    toInsert->setURLsuffix(QString("/jobs/v2"));
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("getAgaveList", AgaveRequestType::AGAVE_GET);
+    toInsert->setURLsuffix(QString("/apps/v2"));
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
 }
 
@@ -762,10 +878,10 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
             return NULL;
         }
         qDebug("URL Req: %s", qPrintable(realURLsuffix));
-        QByteArray emptyPostData;
+        QByteArray filePostData = fullFileName.toLatin1();
 
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
-                         authHeader, emptyPostData, fileHandle);
+                         authHeader, filePostData, fileHandle);
     }
     else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
     {
@@ -786,6 +902,19 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
                          authHeader, emptyPostData);
     }
+    else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD)
+    {
+        qDebug("Post Data: \n%s", qPrintable(clientPostData));
+        QByteArray * uploadData = new QByteArray(clientPostData);
+        //TODO: find a way to clean up the uploadData when no longer needed
+        QBuffer * pipedData = new QBuffer(uploadData);
+        pipedData->open(QBuffer::ReadOnly);
+        qDebug("URL Req: %s", qPrintable(realURLsuffix));
+        QByteArray filePostData = "JSON";
+
+        return finalizeAgaveRequest(taskGuide, realURLsuffix,
+                         authHeader, filePostData, pipedData);
+    }
     else
     {
         emit sendFatalErrorMessage("Non-existant Agave request type requested.");
@@ -795,7 +924,7 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
     return NULL;
 }
 
-QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader, QByteArray postData, QFile * fileHandle)
+QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader, QByteArray postData, QIODevice * fileHandle)
 {
     QNetworkReply * clientReply = NULL;
 
@@ -808,7 +937,6 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
     //clientRequest->setRawHeader("User-Agent", "SimCenterWindGUI");
     if (theGuide->getRequestType() == AgaveRequestType::AGAVE_POST)
     {
-        //TODO: this gave us problems before, related to multiparts
         clientRequest->setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     }
 
@@ -845,15 +973,14 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
     {
         clientReply = networkHandle.deleteResource(*clientRequest);
     }
-    else if (theGuide->getRequestType() == AgaveRequestType::AGAVE_UPLOAD)
+    else if ((theGuide->getRequestType() == AgaveRequestType::AGAVE_UPLOAD) || (theGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD))
     {
         QHttpMultiPart * fileUpload = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
         QHttpPart filePart;
         filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/octet-strem"));
         QString tempString = "form-data; name=\"fileToUpload\"; filename=\"%1\"";
-        QFileInfo fileInfo(fileHandle->fileName());
-        tempString = tempString.arg(fileInfo.fileName());
+        tempString = tempString.arg(QString(postData));
         filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(tempString));
 
         filePart.setBodyDevice(fileHandle);

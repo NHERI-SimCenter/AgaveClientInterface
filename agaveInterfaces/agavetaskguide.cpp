@@ -52,6 +52,11 @@ AgaveTaskGuide::AgaveTaskGuide(QString newID, AgaveRequestType reqType)
         //Agave Download takes one param: the local destination name
         setPostParams("%1", 1);
     }
+    else if (requestType == AgaveRequestType::AGAVE_PIPE_UPLOAD)
+    {
+        //Agave pipe upload takes one param, the full data to be piped
+        setPostParams("%1", 1);
+    }
 }
 
 QString AgaveTaskGuide::getTaskID()
@@ -174,4 +179,44 @@ bool AgaveTaskGuide::usesPostParms()
 bool AgaveTaskGuide::usesURLParams()
 {
     return needsURLParams;
+}
+
+void AgaveTaskGuide::setAgaveFullName(QString newFullName)
+{
+    agaveFullName = newFullName;
+}
+
+void AgaveTaskGuide::setAgavePWDparam(QString newPWDparam)
+{
+    agavePWDparam = newPWDparam;
+}
+
+void AgaveTaskGuide::setAgaveParamList(QStringList newParamList)
+{
+    agaveParamList = newParamList;
+}
+
+void AgaveTaskGuide::setAgaveInputList(QStringList newInputList)
+{
+    agaveInputList = newInputList;
+}
+
+QString AgaveTaskGuide::getAgaveFullName()
+{
+    return agaveFullName;
+}
+
+QString AgaveTaskGuide::getAgavePWDparam()
+{
+    return agavePWDparam;
+}
+
+QStringList AgaveTaskGuide::getAgaveParamList()
+{
+    return agaveParamList;
+}
+
+QStringList AgaveTaskGuide::getAgaveInputList()
+{
+    return agaveInputList;
 }

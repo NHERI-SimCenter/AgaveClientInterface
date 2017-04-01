@@ -39,6 +39,7 @@
 #include <QMap>
 #include <QString>
 #include <QStringList>
+#include <QList>
 
 enum class AgaveRequestType;
 enum class AgaveState;
@@ -61,6 +62,11 @@ public:
     void setAsInternal();
     void setStoreParam(int paramList, int elementToStore);
 
+    void setAgaveFullName(QString newFullName);
+    void setAgavePWDparam(QString newPWDparam);
+    void setAgaveParamList(QStringList newParamList);
+    void setAgaveInputList(QStringList newInputList);
+
     QString getTaskID();
     QString getURLsuffix();
     AgaveRequestType getRequestType();
@@ -73,6 +79,11 @@ public:
     bool hasStoredParam();
     int getStoredParamList();
     int getStoredParamElement();
+
+    QString getAgaveFullName();
+    QString getAgavePWDparam();
+    QStringList getAgaveParamList();
+    QStringList getAgaveInputList();
 
     bool usesPostParms();
     bool usesURLParams();
@@ -100,6 +111,11 @@ private:
 
     QString dynURLFormat = "";
     int numDynURLVals = 0;
+
+    QString agaveFullName;
+    QString agavePWDparam = "";
+    QStringList agaveParamList;
+    QStringList agaveInputList;
 };
 
 #endif // AGAVETASKGUIDE_H
