@@ -43,10 +43,10 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
     myManager = theManager;
     myGuide = theGuide;
 
+    //TODO: Need a more graceful checking mechanism for if myManager is specfied
+
     if (myGuide == NULL)
     {
-        //Note: this also checks that the myManager is specified.
-        //Note: There should probably be a more graceful way of checking for this.
         myManager->forwardAgaveError("Task Reply has no task guide.");
         return;
     }
@@ -362,6 +362,10 @@ void AgaveTaskReply::rawTaskComplete()
     }
     else
     {
+        //longRunRef
+        //TODO: setup and place the longRunRef HERE
+        //myManager->appendNewLongRunTask(longRunRef);
+
         emit haveJobReply(RequestState::GOOD, &parseHandler);
     }
 }
@@ -436,6 +440,11 @@ FileMetaData AgaveTaskReply::parseJSONfileMetaData(QJsonObject fileNameValuePair
     ret.setSize(fileLength);
 
     return ret;
+}
+
+LongRunningTask * AgaveTaskReply::getLongRunningRef()
+{
+    return (LongRunningTask *) longRunRef;
 }
 
 QJsonValue AgaveTaskReply::retriveMainAgaveJSON(QJsonDocument * parsedDoc, const char * oneKey)

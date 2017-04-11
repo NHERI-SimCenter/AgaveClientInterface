@@ -48,6 +48,8 @@ enum class RequestState {FAIL, GOOD, NO_CONNECT};
 
 enum class FileType {FILE, DIR, SIM_LINK, EMPTY_FOLDER, INVALID, UNLOADED}; //Add more as needed
 
+enum class LongRunningState {PENDING, RUNNING, DONE, ERROR}; //Add more if needed
+
 class FileMetaData
 {
 public:
@@ -76,12 +78,35 @@ private:
     FileType myType = FileType::INVALID;
 };
 
+class LongRunningTask : public QObject
+{
+    Q_OBJECT
+
+public:
+    LongRunningTask(QObject * parent);
+
+    virtual void cancelTask() = 0;
+    virtual LongRunningState getState() = 0;
+    virtual QString getIDstr() = 0;
+
+    virtual QString getRawDataStr() = 0;
+
+signals:
+    void stateChange(LongRunningState oldState, LongRunningState newState);
+
+private:
+    virtual void deleteSelf() = 0;
+
+};
+
 class RemoteDataReply : public QObject
 {
     Q_OBJECT
 
 public:
     RemoteDataReply(QObject * parent);
+
+    virtual LongRunningTask * getLongRunningRef() = 0;
 
 signals:
     void haveCurrentRemoteDir(RequestState cmdReply, QString * pwd);
@@ -135,8 +160,11 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
+    virtual LongRunningTask * getLongTaskByRef(QString IDstr) = 0;
+
 signals:
     void sendFatalErrorMessage(QString errorText);
+    void longRunningTasksUpdated();
 };
 
 #endif // REMOTEDATAINTERFACE_H

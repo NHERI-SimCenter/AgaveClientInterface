@@ -36,6 +36,7 @@
 #include "agavehandler.h"
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
+#include "agavelongrunning.h"
 
 //TODO: need to do more double checking of valid file paths
 
@@ -1011,4 +1012,77 @@ QString AgaveHandler::getTenantURL()
 void AgaveHandler::forwardAgaveError(QString errorText)
 {
     emit sendFatalErrorMessage(errorText);
+}
+
+LongRunningTask * AgaveHandler::getLongTaskByRef(QString IDstr)
+{
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        if ((*itr)->getIDstr() == IDstr)
+        {
+            return (LongRunningTask *) (*itr);
+        }
+    }
+    return NULL;
+}
+
+void AgaveHandler::queryLongRunnging()
+{
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        queryLongRunnging(*itr);
+    }
+}
+
+void AgaveHandler::queryLongRunnging(QString taskID)
+{
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        if ((*itr)->getIDstr() == taskID)
+        {
+            queryLongRunnging(*itr);
+        }
+    }
+}
+
+void AgaveHandler::queryLongRunnging(AgaveLongRunning * taskToCheck)
+{
+    if (!longRunningList.contains(taskToCheck)) return;
+
+    //TODO: need to invoke an agave action to get the data, then send it to the object
+}
+
+void AgaveHandler::stopLongRunnging(AgaveLongRunning * taskToStop)
+{
+    if (!longRunningList.contains(taskToStop)) return;
+
+    //TODO: need to invoke an agave action to cancel the task
+}
+
+void AgaveHandler::purgeLongRunning(AgaveLongRunning * taskToForget)
+{
+    if (!longRunningList.contains(taskToForget)) return;
+
+    longRunningList.removeAll(taskToForget);
+}
+
+QList<LongRunningTask *> AgaveHandler::getListOfLongTasks()
+{
+    QList<LongRunningTask *> ret;
+
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        ret.append((LongRunningTask *)(*itr));
+    }
+
+    return ret;
+}
+
+void AgaveHandler::appendNewLongRunTask(AgaveLongRunning * newLongRunner)
+{
+    if (newLongRunner == NULL) return;
+
+    if (longRunningList.contains(newLongRunner)) return;
+
+    longRunningList.append(newLongRunner);
 }

@@ -163,3 +163,4 @@ QString FileMetaData::cleanPathSlashes(QString fullPath)
 
 RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
 RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
+LongRunningTask::LongRunningTask(QObject * parent):QObject(parent) {}

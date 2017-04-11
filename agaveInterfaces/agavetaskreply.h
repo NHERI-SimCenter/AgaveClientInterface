@@ -50,6 +50,7 @@
 enum class RequestState;
 class AgaveHandler;
 class AgaveTaskGuide;
+class AgaveLongRunning;
 
 class AgaveTaskReply : public RemoteDataReply
 {
@@ -72,6 +73,8 @@ public:
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QString oneKey);
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QList<QString> keyList);
     static QJsonValue recursiveJSONdig(QJsonValue currObj, QList<QString> * keyList, int i);
+
+    LongRunningTask * getLongRunningRef();
 
 signals:
     void haveCurrentRemoteDir(RequestState cmdReply, QString * pwd);
@@ -113,6 +116,8 @@ private:
     RequestState pendingReply;
     QString pendingParam;
     QString dataStore;
+
+    AgaveLongRunning * longRunRef = NULL;
 };
 
 #endif // AGAVETASKREPLY_H

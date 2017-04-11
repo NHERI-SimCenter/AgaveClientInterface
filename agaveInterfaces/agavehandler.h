@@ -61,6 +61,7 @@ enum class AgaveParamType {PARAM_STRING, PARAM_INT, PARAM_BOOL};
 class QNetworkReply;
 class AgaveTaskGuide;
 class AgaveTaskReply;
+class AgaveLongRunning;
 
 class AgaveHandler : public RemoteDataInterface
 {
@@ -95,9 +96,22 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
+    virtual LongRunningTask * getLongTaskByRef(QString IDstr);
+
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
+
+    //To manage long running Tasks:
+    void queryLongRunnging();
+    void queryLongRunnging(QString taskID);
+    void queryLongRunnging(AgaveLongRunning * taskToCheck);
+
+    void stopLongRunnging(AgaveLongRunning * taskToStop);
+    void purgeLongRunning(AgaveLongRunning * taskToForget);
+
+    QList<LongRunningTask *> getListOfLongTasks();
+    void appendNewLongRunTask(AgaveLongRunning * newLongRunner);
 
     //On Agave Apps:
     //There are two ways to invoke Agave Apps,
@@ -112,10 +126,11 @@ public:
     //the job parameters are a list matching the inputs/parameters given by parameterList and inputList
     //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)
 
-    //For debugging purposes, to retrive the list of availalbe Agave Apps:
+    //For debugging purposes, to retrive the list of available Agave Apps:
     RemoteDataReply * getAgaveAppList();
 signals:
     void finishedAllTasks();
+    void longRunningTasksUpdated();
 
 private slots:
     void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
@@ -164,6 +179,8 @@ private:
     bool performingShutdown = false;
     bool authGained = false;
     bool attemptingAuth = false;
+
+    QList<AgaveLongRunning *> longRunningList;
 };
 
 #endif // AGAVEHANDLER_H
