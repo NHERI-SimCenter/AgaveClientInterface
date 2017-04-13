@@ -57,6 +57,11 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
         return;
     }
 
+    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
+    {
+        pendingReply = RequestState::NO_CONNECT;
+    }
+
     if (myReplyObject != NULL)
     {
         QObject::connect(myReplyObject, SIGNAL(finished()), this, SLOT(rawTaskComplete()));
@@ -79,7 +84,6 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
         return;
     }
 
-    haveReplyStore = true;
     pendingReply = replyState;
     if (param1 == NULL)
     {
@@ -95,7 +99,7 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
     quickTimer->start(1);
 }
 
-void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * param1)
+void AgaveTaskReply::invokePassThruReply()
 {
     this->deleteLater();
     if (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE)
@@ -105,17 +109,17 @@ void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * para
     }
     if (myGuide->getTaskID() == "changeDir")
     {
-        emit haveCurrentRemoteDir(replyState, param1);
+        emit haveCurrentRemoteDir(pendingReply, &pendingParam);
         return;
     }
     if (myGuide->getTaskID() == "fullAuth")
     {
-        emit haveAuthReply(replyState);
+        emit haveAuthReply(pendingReply);
         return;
     }
     if (myGuide->getTaskID() == "waitAll")
     {
-        emit connectionsClosed(replyState);
+        emit connectionsClosed(pendingReply);
         return;
     }
 
@@ -191,14 +195,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
     {
-        if (haveReplyStore == false)
-        {
-            invokePassThruReply(RequestState::NO_CONNECT);
-        }
-        else
-        {
-            invokePassThruReply(pendingReply, &pendingParam);
-        }
+        invokePassThruReply();
         return;
     }
 

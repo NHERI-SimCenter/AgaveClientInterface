@@ -60,7 +60,6 @@ public:
     void setDynamicURLParams(QString format, int numSubs);
     void setPostParams(QString format, int numSubs);
     void setAsInternal();
-    void setStoreParam(int paramList, int elementToStore);
 
     void setAgaveFullName(QString newFullName);
     void setAgavePWDparam(QString newPWDparam);
@@ -75,10 +74,6 @@ public:
     QByteArray fillURLArgList(QStringList * argList = NULL);
     bool isTokenFormat();
     bool isInternal();
-
-    bool hasStoredParam();
-    int getStoredParamList();
-    int getStoredParamElement();
 
     QString getAgaveFullName();
     QString getAgavePWDparam();
@@ -101,10 +96,6 @@ private:
     bool usesTokenFormat = false;
     bool needsPostParams = false;
     bool needsURLParams = false;
-
-    bool storeParamInReply = false;
-    int storeParamList = 0;
-    int storeParamElement = 0;
 
     QString postFormat = "";
     int numPostVals = 0;

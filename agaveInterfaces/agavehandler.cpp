@@ -518,6 +518,12 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setURLsuffix(QString("/apps/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("getJobList", AgaveRequestType::AGAVE_GET);
+    toInsert->setURLsuffix(QString("/jobs/v2"));
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    toInsert->isInternal();
+    insertAgaveTaskGuide(toInsert);
 }
 
 void AgaveHandler::insertAgaveTaskGuide(AgaveTaskGuide * newGuide)
@@ -692,6 +698,8 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 authGained = true;
                 attemptingAuth = false;
 
+                queryForJobList();
+
                 forwardReplyToParent(agaveReply, RequestState::GOOD);
                 qDebug("Login success.");
             }
@@ -715,6 +723,18 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 return;
             }
             //TODO: Will need more info here based on when, how and where refreshes are requested
+        }
+    }
+    else if (taskID == "getJobList")
+    {
+        if ((prelimResult == RequestState::GOOD) && (parseHandler.isArray()))
+        {
+            QJsonArray jobList = parseHandler.array();
+            parseAndUpdateJobList(&jobList);
+        }
+        else
+        {
+            qDebug("Job Listing failed");
         }
     }
     else
@@ -1085,4 +1105,18 @@ void AgaveHandler::appendNewLongRunTask(AgaveLongRunning * newLongRunner)
     if (longRunningList.contains(newLongRunner)) return;
 
     longRunningList.append(newLongRunner);
+}
+
+void AgaveHandler::queryForJobList()
+{
+    qDebug("Getting list of outstanding Agave Jobs");
+    performAgaveQuery("getJobList");
+}
+
+void AgaveHandler::parseAndUpdateJobList(QJsonArray * newJobList)
+{
+    qDebug("Have not yet implemented job list parser");
+    //DOLINE
+
+    emit longRunningTasksUpdated();
 }

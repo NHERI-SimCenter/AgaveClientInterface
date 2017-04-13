@@ -33,17 +33,17 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
+//BIG TODO: Switch the ad hoc datastore to the more robust getTaskParamList
+
 #ifndef AGAVEHANDLER_H
 #define AGAVEHANDLER_H
-
-//Note: In order to insure that this work continues to function, even without Agave,
-//This is a subclass of a more generic abstract class
 
 #include "../remotedatainterface.h"
 
 #include <QtGlobal>
 #include <QObject>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QSslConfiguration>
 #include <QJsonDocument>
 #include <QFile>
@@ -56,9 +56,7 @@
 #include <QMultiMap>
 
 enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
-enum class AgaveParamType {PARAM_STRING, PARAM_INT, PARAM_BOOL};
 
-class QNetworkReply;
 class AgaveTaskGuide;
 class AgaveTaskReply;
 class AgaveLongRunning;
@@ -96,30 +94,20 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
+    virtual QList<LongRunningTask *> getListOfLongTasks();
     virtual LongRunningTask * getLongTaskByRef(QString IDstr);
+
+    //-----------------------------------------
+    //Agave Specific Functions:
 
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
 
-    //To manage long running Tasks:
-    void queryLongRunnging();
-    void queryLongRunnging(QString taskID);
-    void queryLongRunnging(AgaveLongRunning * taskToCheck);
-
     void stopLongRunnging(AgaveLongRunning * taskToStop);
     void purgeLongRunning(AgaveLongRunning * taskToForget);
 
-    QList<LongRunningTask *> getListOfLongTasks();
-    void appendNewLongRunTask(AgaveLongRunning * newLongRunner);
-
     //On Agave Apps:
-    //There are two ways to invoke Agave Apps,
-    //1) (Advanced) Directly, by using:
-    RemoteDataReply * invokeAgaveApp(QJsonDocument rawJSONinput);
-    //This also requires interfacing with the AgaveHandler at every invoke, and cuts down on the potential for polymorphism
-
-    //2)(Basic) (and allows for polymorphism for code other than setup)
     //Register info on the Agave App's parameters, using:
     void registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
     //After that, use the standard runRemoteJob, where jobName is the agaveAppName,
@@ -129,8 +117,11 @@ public:
     //For debugging purposes, to retrive the list of available Agave Apps:
     RemoteDataReply * getAgaveAppList();
 signals:
-    void finishedAllTasks();
+    void sendFatalErrorMessage(QString errorText);
     void longRunningTasksUpdated();
+
+    //Agave specific signal:
+    void finishedAllTasks();
 
 private slots:
     void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
@@ -153,6 +144,11 @@ private:
     AgaveTaskGuide * retriveTaskGuide(QString taskID);
 
     QString getPathReletiveToCWD(QString inputPath);
+
+    RemoteDataReply * invokeAgaveApp(QJsonDocument rawJSONinput);
+
+    void remoteQueryForJobList();
+    void parseAndUpdateJobList(QJsonArray * newJobList);
 
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;

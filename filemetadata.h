@@ -33,10 +33,41 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#include "remotedatainterface.h"
+#ifndef FILEMETADATA_H
+#define FILEMETADATA_H
 
-RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
+#include <QObject>
+#include <QList>
+#include <QString>
 
-RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
+enum class FileType {FILE, DIR, SIM_LINK, EMPTY_FOLDER, INVALID, UNLOADED}; //Add more as needed
 
-LongRunningTask::LongRunningTask(QObject * parent):QObject(parent) {}
+class FileMetaData
+{
+public:
+    FileMetaData();
+    bool operator==(const FileMetaData & toCompare);
+
+    void setFullFilePath(QString fullPath);
+    void setSize(int newSize);
+    void setType(FileType newType);
+
+    QString getFullPath() const;
+    QString getFileName() const;
+    QString getContainingPath() const;
+    int getSize() const;
+    FileType getFileType() const;
+    QString getFileTypeString() const;
+
+    static QStringList getPathNameList(QString fullPath);
+    static QString cleanPathSlashes(QString fullPath);
+
+private:
+    //Add more members as needed, all must have reasonable defaults, and be handled in copy constructor
+    QString fullContainingPath; //ie. full path without this files own name
+    QString fileName;
+    int fileSize = 0; //in bytes?
+    FileType myType = FileType::INVALID;
+};
+
+#endif // FILEMETADATA_H
