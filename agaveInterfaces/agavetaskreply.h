@@ -59,7 +59,7 @@ public:
     explicit AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply *newReply, AgaveHandler * theManager, QObject *parent = 0);
     ~AgaveTaskReply();
 
-    virtual LongRunningTask * getLongRunningRef();
+    virtual LongRunningTask * getLongRunningRef(bool claimRef = true);
     virtual QMultiMap<QString, QString> * getTaskParamList();
 
     //-------------------------------------------------
@@ -69,8 +69,6 @@ public:
     void delayedPassThruReply(RequestState replyState, QString * param1 = NULL);
 
     AgaveTaskGuide * getTaskGuide();
-
-    void setDataStore(QString newSetting);
 
     static RequestState standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc);
     static FileMetaData parseJSONfileMetaData(QJsonObject fileNameValuePairs);
@@ -96,6 +94,7 @@ signals:
 
     void haveUploadReply(RequestState replyState, FileMetaData * newFileData);
     void haveDownloadReply(RequestState replyState);
+    void haveBufferDownloadReply(RequestState authReply, QByteArray * fileBuffer);
 
     void haveJobReply(RequestState replyState, QJsonDocument * rawJobReply);
 
@@ -120,8 +119,8 @@ private:
     RequestState pendingReply;
     QString pendingParam;
 
-    QString dataStore;
-
+    QMultiMap<QString, QString> * taskParamList = NULL;
+    bool longRunRefTaken = false;
     AgaveLongRunning * longRunRef = NULL;
 };
 

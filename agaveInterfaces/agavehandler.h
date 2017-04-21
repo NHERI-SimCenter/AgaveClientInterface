@@ -33,8 +33,6 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-//BIG TODO: Switch the ad hoc datastore to the more robust getTaskParamList
-
 #ifndef AGAVEHANDLER_H
 #define AGAVEHANDLER_H
 
@@ -55,7 +53,7 @@
 #include <QList>
 #include <QMultiMap>
 
-enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
+enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_PIPE_DOWNLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
 
 class AgaveTaskGuide;
 class AgaveTaskReply;
@@ -87,10 +85,12 @@ public:
     virtual RemoteDataReply * copyFile(QString from, QString to);
     virtual RemoteDataReply * renameFile(QString fullName, QString newName);
 
-    virtual RemoteDataReply * mkRemoteDir(QString loc, QString newName);
+    virtual RemoteDataReply * mkRemoteDir(QString location, QString newName);
 
-    virtual RemoteDataReply * uploadFile(QString loc, QString localFileName);
+    virtual RemoteDataReply * uploadFile(QString location, QString localFileName);
+    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
+    virtual RemoteDataReply * downloadBuffer(QString localDest, QString remoteName);
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
@@ -145,10 +145,8 @@ private:
 
     QString getPathReletiveToCWD(QString inputPath);
 
-    RemoteDataReply * invokeAgaveApp(QJsonDocument rawJSONinput);
-
     void remoteQueryForJobList();
-    void parseAndUpdateJobList(QJsonArray * newJobList);
+    void parseAndUpdateJobList(QJsonArray newJobList);
 
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;

@@ -36,6 +36,7 @@
 #ifndef FILEMETADATA_H
 #define FILEMETADATA_H
 
+#include <QStringList>
 #include <QObject>
 #include <QList>
 #include <QString>

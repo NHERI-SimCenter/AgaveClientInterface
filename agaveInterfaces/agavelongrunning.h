@@ -4,6 +4,10 @@
 #include "../remotedatainterface.h"
 
 #include <QObject>
+#include <QMultiMap>
+
+#include <QJsonDocument>
+#include <QJsonObject>
 
 class AgaveHandler;
 
@@ -12,24 +16,29 @@ class AgaveLongRunning : public LongRunningTask
     Q_OBJECT
 
 public:
-    AgaveLongRunning(QString taskID, AgaveHandler * manager);
+    AgaveLongRunning(QMultiMap<QString, QString> * newParamList, AgaveHandler * manager);
+    ~AgaveLongRunning();
 
     virtual void cancelTask();
+    virtual void purgeTaskData();
     virtual LongRunningState getState();
-    virtual QString getIDstr();
 
+    virtual QString getIDstr();
     virtual QString getRawDataStr();
 
+    virtual QMultiMap<QString, QString> * getTaskParamList();
+
+    void setIDstr(QString newID);
     void changeState(LongRunningState newState);
-    void setRawDataStr(QString);
+    void setRawDataStr(QString newRawData);
+    void parseJSONdescription(QJsonDocument taskJSONdesc);
 
 signals:
     void stateChange(LongRunningState oldState, LongRunningState newState);
 
 private:
-    virtual void deleteSelf();
-
     AgaveHandler * myManager;
+    QMultiMap<QString, QString> * taskParamList = NULL;
 
     QString myIDstr;
     QString myRawData;

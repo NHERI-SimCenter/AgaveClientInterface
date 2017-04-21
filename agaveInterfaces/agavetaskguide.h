@@ -70,7 +70,7 @@ public:
     QString getURLsuffix();
     AgaveRequestType getRequestType();
     AuthHeaderType getHeaderType();
-    QByteArray fillPostArgList(QStringList *argList = NULL);
+    QByteArray fillPostArgList(QStringList * argList = NULL);
     QByteArray fillURLArgList(QStringList * argList = NULL);
     bool isTokenFormat();
     bool isInternal();
@@ -104,7 +104,7 @@ private:
     int numDynURLVals = 0;
 
     QString agaveFullName;
-    QString agavePWDparam = "";
+    QString agavePWDparam;
     QStringList agaveParamList;
     QStringList agaveInputList;
 };

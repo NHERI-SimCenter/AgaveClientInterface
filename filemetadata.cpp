@@ -62,13 +62,27 @@ void FileMetaData::setFullFilePath(QString fullPath)
         pathParts = fullPath.split('\\');
         divChar = '\\';
     }
-    fileName = pathParts.at(pathParts.size() - 1);
-    pathParts.removeLast();
+    fileName = "";
+
+    while (fileName.isEmpty())
+    {
+        if (pathParts.size() == 0)
+        {
+            fullContainingPath = "";
+            fullContainingPath = fullContainingPath.append(divChar);
+            fileName = "";
+            return;
+        }
+        fileName = pathParts.takeLast();
+    }
     fullContainingPath = divChar;
     for (auto itr = pathParts.cbegin(); itr != pathParts.cend(); itr++)
     {
-        fullContainingPath.append(*itr);
-        fullContainingPath.append(divChar);
+        if (!(*itr).isEmpty())
+        {
+            fullContainingPath.append(*itr);
+            fullContainingPath.append(divChar);
+        }
     }
 }
 
