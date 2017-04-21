@@ -590,7 +590,7 @@ void AgaveHandler::setupTaskGuideList()
     toInsert = new AgaveTaskGuide("getJobList", AgaveRequestType::AGAVE_GET);
     toInsert->setURLsuffix(QString("/jobs/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->isInternal();
+    toInsert->setAsInternal();
     insertAgaveTaskGuide(toInsert);
 }
 
@@ -1159,8 +1159,7 @@ void AgaveHandler::parseAndUpdateJobList(QJsonArray newJobList)
             if ((*itr2).isObject() && (*itr2).toObject().value("id").toString() == nameToFind)
             {
                 foundNewInfo = true;
-                QJsonDocument tmpDoc((*itr2).toObject());
-                (*itr)->parseJSONdescription(tmpDoc);
+                (*itr)->parseJSONdescription((*itr2).toObject());
                 break;
             }
         }
@@ -1186,6 +1185,8 @@ void AgaveHandler::parseAndUpdateJobList(QJsonArray newJobList)
         {
             AgaveLongRunning * newEntry = new AgaveLongRunning(NULL,this);
             longRunningList.append(newEntry);
+            newEntry->setIDstr((*itr).toObject().value("id").toString());
+            newEntry->parseJSONdescription((*itr).toObject());
         }
     }
 
