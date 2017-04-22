@@ -50,6 +50,7 @@
 enum class RequestState;
 class AgaveHandler;
 class AgaveTaskGuide;
+class AgaveLongRunning;
 
 class AgaveTaskReply : public RemoteDataReply
 {
@@ -58,12 +59,16 @@ public:
     explicit AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply *newReply, AgaveHandler * theManager, QObject *parent = 0);
     ~AgaveTaskReply();
 
-    void invokePassThruReply(RequestState replyState, QString * param1 = NULL);
+    virtual LongRunningTask * getLongRunningRef(bool claimRef = true);
+    virtual QMultiMap<QString, QString> * getTaskParamList();
+
+    //-------------------------------------------------
+    //Agave specific:
+
+    void invokePassThruReply();
     void delayedPassThruReply(RequestState replyState, QString * param1 = NULL);
 
     AgaveTaskGuide * getTaskGuide();
-
-    void setDataStore(QString newSetting);
 
     static RequestState standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc);
     static FileMetaData parseJSONfileMetaData(QJsonObject fileNameValuePairs);
@@ -80,18 +85,20 @@ signals:
     void haveAuthReply(RequestState authReply);
     void haveLSReply(RequestState cmdReply, QList<FileMetaData> * fileDataList);
 
-    void haveDeleteReply(RequestState replyState, QString * oldFilePath);
-    void haveMoveReply(RequestState replyState, QString * oldFilePath, FileMetaData * revisedFileData);
+    void haveDeleteReply(RequestState replyState);
+    void haveMoveReply(RequestState replyState, FileMetaData * revisedFileData);
     void haveCopyReply(RequestState replyState, FileMetaData * newFileData);
-    void haveRenameReply(RequestState replyState, QString * oldFilePath, FileMetaData * newFileData);
+    void haveRenameReply(RequestState replyState, FileMetaData * newFileData);
 
     void haveMkdirReply(RequestState replyState, FileMetaData * newFolderData);
 
     void haveUploadReply(RequestState replyState, FileMetaData * newFileData);
-    void haveDownloadReply(RequestState replyState, QString * localDest);
+    void haveDownloadReply(RequestState replyState);
+    void haveBufferDownloadReply(RequestState authReply, QByteArray * fileBuffer);
 
     void haveJobReply(RequestState replyState, QJsonDocument * rawJobReply);
 
+    //For redirecting info to the Agave handler:
     void haveInternalTaskReply(AgaveTaskReply * theGuide, QNetworkReply * rawReply);
 
 private slots:
@@ -109,10 +116,12 @@ private:
     QNetworkReply * myReplyObject = NULL;
 
     //PassThru reply store:
-    bool haveReplyStore = false;
     RequestState pendingReply;
     QString pendingParam;
-    QString dataStore;
+
+    QMultiMap<QString, QString> * taskParamList = NULL;
+    bool longRunRefTaken = false;
+    AgaveLongRunning * longRunRef = NULL;
 };
 
 #endif // AGAVETASKREPLY_H

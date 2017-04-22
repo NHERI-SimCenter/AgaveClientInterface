@@ -33,80 +33,42 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#ifndef AGAVETASKGUIDE_H
-#define AGAVETASKGUIDE_H
+#ifndef FILEMETADATA_H
+#define FILEMETADATA_H
 
-#include <QMap>
-#include <QString>
 #include <QStringList>
+#include <QObject>
 #include <QList>
+#include <QString>
 
-enum class AgaveRequestType;
-enum class AgaveState;
+enum class FileType {FILE, DIR, SIM_LINK, EMPTY_FOLDER, INVALID, UNLOADED}; //Add more as needed
 
-//TODO: This whole class, needs more documentation in particular
-enum class AuthHeaderType {NONE, PASSWD, CLIENT, TOKEN, REFRESH};
-
-class AgaveTaskGuide
+class FileMetaData
 {
 public:
-    explicit AgaveTaskGuide();
-    explicit AgaveTaskGuide(QString newID, AgaveRequestType reqType);
+    FileMetaData();
+    bool operator==(const FileMetaData & toCompare);
 
-    void setURLsuffix(QString newValue);
-    void setHeaderType(AuthHeaderType newValue);
+    void setFullFilePath(QString fullPath);
+    void setSize(int newSize);
+    void setType(FileType newType);
 
-    void setTokenFormat(bool newSetting);
-    void setDynamicURLParams(QString format, int numSubs);
-    void setPostParams(QString format, int numSubs);
-    void setAsInternal();
+    QString getFullPath() const;
+    QString getFileName() const;
+    QString getContainingPath() const;
+    int getSize() const;
+    FileType getFileType() const;
+    QString getFileTypeString() const;
 
-    void setAgaveFullName(QString newFullName);
-    void setAgavePWDparam(QString newPWDparam);
-    void setAgaveParamList(QStringList newParamList);
-    void setAgaveInputList(QStringList newInputList);
-
-    QString getTaskID();
-    QString getURLsuffix();
-    AgaveRequestType getRequestType();
-    AuthHeaderType getHeaderType();
-    QByteArray fillPostArgList(QStringList * argList = NULL);
-    QByteArray fillURLArgList(QStringList * argList = NULL);
-    bool isTokenFormat();
-    bool isInternal();
-
-    QString getAgaveFullName();
-    QString getAgavePWDparam();
-    QStringList getAgaveParamList();
-    QStringList getAgaveInputList();
-
-    bool usesPostParms();
-    bool usesURLParams();
+    static QStringList getPathNameList(QString fullPath);
+    static QString cleanPathSlashes(QString fullPath);
 
 private:
-    QString taskId;
-
-    QString URLsuffix = "";
-    AgaveRequestType requestType;
-    AuthHeaderType headerType = AuthHeaderType::NONE;
-
-    QByteArray fillAnyArgList(QStringList *argList, int numVals, QString strFormat);
-
-    bool internalTask = false;
-    bool usesTokenFormat = false;
-    bool needsPostParams = false;
-    bool needsURLParams = false;
-
-    QString postFormat = "";
-    int numPostVals = 0;
-
-    QString dynURLFormat = "";
-    int numDynURLVals = 0;
-
-    QString agaveFullName;
-    QString agavePWDparam;
-    QStringList agaveParamList;
-    QStringList agaveInputList;
+    //Add more members as needed, all must have reasonable defaults, and be handled in copy constructor
+    QString fullContainingPath; //ie. full path without this files own name
+    QString fileName;
+    int fileSize = 0; //in bytes?
+    FileType myType = FileType::INVALID;
 };
 
-#endif // AGAVETASKGUIDE_H
+#endif // FILEMETADATA_H

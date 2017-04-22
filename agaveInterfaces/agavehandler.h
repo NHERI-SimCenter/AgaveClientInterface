@@ -36,14 +36,12 @@
 #ifndef AGAVEHANDLER_H
 #define AGAVEHANDLER_H
 
-//Note: In order to insure that this work continues to function, even without Agave,
-//This is a subclass of a more generic abstract class
-
 #include "../remotedatainterface.h"
 
 #include <QtGlobal>
 #include <QObject>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QSslConfiguration>
 #include <QJsonDocument>
 #include <QFile>
@@ -55,12 +53,11 @@
 #include <QList>
 #include <QMultiMap>
 
-enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
-enum class AgaveParamType {PARAM_STRING, PARAM_INT, PARAM_BOOL};
+enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_PIPE_DOWNLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
 
-class QNetworkReply;
 class AgaveTaskGuide;
 class AgaveTaskReply;
+class AgaveLongRunning;
 
 class AgaveHandler : public RemoteDataInterface
 {
@@ -88,33 +85,43 @@ public:
     virtual RemoteDataReply * copyFile(QString from, QString to);
     virtual RemoteDataReply * renameFile(QString fullName, QString newName);
 
-    virtual RemoteDataReply * mkRemoteDir(QString loc, QString newName);
+    virtual RemoteDataReply * mkRemoteDir(QString location, QString newName);
 
-    virtual RemoteDataReply * uploadFile(QString loc, QString localFileName);
+    virtual RemoteDataReply * uploadFile(QString location, QString localFileName);
+    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
+    virtual RemoteDataReply * downloadBuffer(QString localDest, QString remoteName);
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
+
+    virtual void forceRefreshOfLongTasks();
+    virtual QList<LongRunningTask *> getListOfLongTasks();
+    virtual LongRunningTask * getLongTaskByRef(QString IDstr);
+
+    //-----------------------------------------
+    //Agave Specific Functions:
 
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
 
-    //On Agave Apps:
-    //There are two ways to invoke Agave Apps,
-    //1) (Advanced) Directly, by using:
-    RemoteDataReply * invokeAgaveApp(QJsonDocument rawJSONinput);
-    //This also requires interfacing with the AgaveHandler at every invoke, and cuts down on the potential for polymorphism
+    void stopLongRunnging(AgaveLongRunning * taskToStop);
+    void purgeLongRunning(AgaveLongRunning * taskToForget);
 
-    //2)(Basic) (and allows for polymorphism for code other than setup)
+    //On Agave Apps:
     //Register info on the Agave App's parameters, using:
     void registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
     //After that, use the standard runRemoteJob, where jobName is the agaveAppName,
     //the job parameters are a list matching the inputs/parameters given by parameterList and inputList
     //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)
 
-    //For debugging purposes, to retrive the list of availalbe Agave Apps:
+    //For debugging purposes, to retrive the list of available Agave Apps:
     RemoteDataReply * getAgaveAppList();
 signals:
+    void sendFatalErrorMessage(QString errorText);
+    void longRunningTasksUpdated();
+
+    //Agave specific signal:
     void finishedAllTasks();
 
 private slots:
@@ -138,6 +145,9 @@ private:
     AgaveTaskGuide * retriveTaskGuide(QString taskID);
 
     QString getPathReletiveToCWD(QString inputPath);
+
+    void remoteQueryForJobList();
+    void parseAndUpdateJobList(QJsonArray newJobList);
 
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;
@@ -164,6 +174,8 @@ private:
     bool performingShutdown = false;
     bool authGained = false;
     bool attemptingAuth = false;
+
+    QList<AgaveLongRunning *> longRunningList;
 };
 
 #endif // AGAVEHANDLER_H

@@ -36,6 +36,9 @@
 #include "agavehandler.h"
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
+#include "agavelongrunning.h"
+
+#include "../AgaveClientInterface/filemetadata.h"
 
 //TODO: need to do more double checking of valid file paths
 
@@ -91,6 +94,8 @@ RemoteDataReply * AgaveHandler::setCurrentRemoteWorkingDirectory(QString cd)
         pwd = tmp;
         passThru->delayedPassThruReply(RequestState::GOOD, &pwd);
     }
+
+    passThru->getTaskParamList()->insert("cd",cd);
 
     return (RemoteDataReply *) passThru;
 }
@@ -189,6 +194,8 @@ RemoteDataReply * AgaveHandler::performAuth(QString uname, QString passwd)
         return NULL;
     }
     attemptingAuth = true;
+    parentReply->getTaskParamList()->insert("uname", uname);
+    parentReply->getTaskParamList()->insert("passwd", passwd);
     return (RemoteDataReply *) parentReply;
 }
 
@@ -200,13 +207,21 @@ RemoteDataReply * AgaveHandler::remoteLS(QString dirPath)
         tmp = "/";
         tmp.append(authUname);
     }
-    return (RemoteDataReply *) performAgaveQuery("dirListing", tmp);
+
+    AgaveTaskReply * theReply = performAgaveQuery("dirListing", tmp);
+    theReply->getTaskParamList()->insert("dirPath", tmp);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::deleteFile(QString toDelete)
 {
     QString toCheck = getPathReletiveToCWD(toDelete);
-    return (RemoteDataReply *) performAgaveQuery("fileDelete", toCheck);
+
+    AgaveTaskReply * theReply = performAgaveQuery("fileDelete", toCheck);
+    theReply->getTaskParamList()->insert("toDelete", toCheck);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::moveFile(QString from, QString to)
@@ -214,7 +229,11 @@ RemoteDataReply * AgaveHandler::moveFile(QString from, QString to)
     QString fromCheck = getPathReletiveToCWD(from);
     QString toCheck = getPathReletiveToCWD(to);
     //TODO: check stuff is valid
-    return (RemoteDataReply *) performAgaveQuery("fileMove", fromCheck, toCheck);
+    AgaveTaskReply * theReply = performAgaveQuery("fileMove", fromCheck, toCheck);
+    theReply->getTaskParamList()->insert("from", fromCheck);
+    theReply->getTaskParamList()->insert("to", toCheck);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::copyFile(QString from, QString to)
@@ -222,40 +241,86 @@ RemoteDataReply * AgaveHandler::copyFile(QString from, QString to)
     QString fromCheck = getPathReletiveToCWD(from);
     QString toCheck = getPathReletiveToCWD(to);
     //TODO: check stuff is valid
-    return (RemoteDataReply *) performAgaveQuery("fileCopy", fromCheck, toCheck);
+    AgaveTaskReply * theReply = performAgaveQuery("fileCopy", fromCheck, toCheck);
+    theReply->getTaskParamList()->insert("from", fromCheck);
+    theReply->getTaskParamList()->insert("to", toCheck);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::renameFile(QString fullName, QString newName)
 {
     QString toCheck = getPathReletiveToCWD(fullName);
     //TODO: check that path and new name is valid
-    return (RemoteDataReply *) performAgaveQuery("renameFile", toCheck, newName);
+    AgaveTaskReply * theReply = performAgaveQuery("renameFile", toCheck, newName);
+    theReply->getTaskParamList()->insert("fullName", toCheck);
+    theReply->getTaskParamList()->insert("newName", newName);
+
+    return (RemoteDataReply *) theReply;
 }
 
-RemoteDataReply * AgaveHandler::mkRemoteDir(QString loc, QString newName)
+RemoteDataReply * AgaveHandler::mkRemoteDir(QString location, QString newName)
 {
-    QString toCheck = getPathReletiveToCWD(loc);
+    QString toCheck = getPathReletiveToCWD(location);
     //TODO: check that path and new name is valid
-    return (RemoteDataReply *) performAgaveQuery("newFolder", toCheck, newName);
+    AgaveTaskReply * theReply = performAgaveQuery("newFolder", toCheck, newName);
+    theReply->getTaskParamList()->insert("location", toCheck);
+    theReply->getTaskParamList()->insert("newName", newName);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::uploadFile(QString location, QString localFileName)
 {
     QString toCheck = getPathReletiveToCWD(location);
     //TODO: check that path and local file exists
-    return (RemoteDataReply *) performAgaveQuery("fileUpload", toCheck, localFileName);
+    AgaveTaskReply * theReply = performAgaveQuery("fileUpload", toCheck, localFileName);
+    theReply->getTaskParamList()->insert("location", toCheck);
+    theReply->getTaskParamList()->insert("localFileName", localFileName);
+
+    return (RemoteDataReply *) theReply;
+}
+
+RemoteDataReply * AgaveHandler::uploadBuffer(QString location, QByteArray fileData)
+{
+    QString toCheck = getPathReletiveToCWD(location);
+    //TODO: check that path and local file exists
+    AgaveTaskReply * theReply = performAgaveQuery("filePipeUpload", toCheck, fileData);
+    theReply->getTaskParamList()->insert("location", toCheck);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteName)
 {
     //TODO: check path and local path
     QString toCheck = getPathReletiveToCWD(remoteName);
-    return (RemoteDataReply *) performAgaveQuery("fileDownload", toCheck, localDest);
+    AgaveTaskReply * theReply = performAgaveQuery("fileDownload", toCheck, localDest);
+    theReply->getTaskParamList()->insert("remoteName", toCheck);
+    theReply->getTaskParamList()->insert("localDest", localDest);
+
+    return (RemoteDataReply *) theReply;
+}
+
+RemoteDataReply * AgaveHandler::downloadBuffer(QString localDest, QString remoteName)
+{
+    //TODO: check path and local path
+    QString toCheck = getPathReletiveToCWD(remoteName);
+    AgaveTaskReply * theReply = performAgaveQuery("filePipeDownload", toCheck, localDest);
+    theReply->getTaskParamList()->insert("remoteName", toCheck);
+    theReply->getTaskParamList()->insert("localDest", localDest);
+
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::getAgaveAppList()
 {
     return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
+}
+
+void AgaveHandler::forceRefreshOfLongTasks()
+{
+    remoteQueryForJobList();
 }
 
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
@@ -334,12 +399,13 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
     rawJSONinput.setObject(rootObject);
 
     qDebug("%s",qPrintable(rawJSONinput.toJson()));
-    return (RemoteDataReply *) invokeAgaveApp(rawJSONinput);
-}
 
-RemoteDataReply * AgaveHandler::invokeAgaveApp(QJsonDocument rawJSONinput)
-{
-    return (RemoteDataReply *) performAgaveQuery("agaveAppStart", QString(rawJSONinput.toJson()));
+    AgaveTaskReply * theReply = performAgaveQuery("agaveAppStart", QString(rawJSONinput.toJson()));
+    theReply->getTaskParamList()->insert("jobName", jobName);
+    theReply->getTaskParamList()->insert("remoteWorkingDir", remoteWorkingDir);
+    *(theReply->getTaskParamList()) += jobParameters;
+
+    return (RemoteDataReply *) theReply;
 }
 
 void AgaveHandler::registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter)
@@ -468,14 +534,24 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setURLsuffix((QString("/files/v2/media/system/%1/")).arg(storageNode));
     toInsert->setDynamicURLParams("%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->setStoreParam(1,0);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("filePipeUpload", AgaveRequestType::AGAVE_PIPE_UPLOAD);
+    toInsert->setURLsuffix((QString("/files/v2/media/system/%1/")).arg(storageNode));
+    toInsert->setDynamicURLParams("%1",1);
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("filePipeDownload", AgaveRequestType::AGAVE_PIPE_DOWNLOAD);
+    toInsert->setURLsuffix((QString("/files/v2/media/system/%1/")).arg(storageNode));
+    toInsert->setDynamicURLParams("%1",1);
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("fileDelete", AgaveRequestType::AGAVE_DELETE);
     toInsert->setURLsuffix((QString("/files/v2/media/system/%1/")).arg(storageNode));
     toInsert->setDynamicURLParams("%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->setStoreParam(0,0);
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("newFolder", AgaveRequestType::AGAVE_PUT);
@@ -490,7 +566,6 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setDynamicURLParams("%1",1);
     toInsert->setPostParams("action=rename&path=%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->setStoreParam(0,0);
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("fileCopy", AgaveRequestType::AGAVE_PUT);
@@ -505,7 +580,6 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setDynamicURLParams("%1",1);
     toInsert->setPostParams("action=move&path=%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->setStoreParam(0,0);
     insertAgaveTaskGuide(toInsert);
 
     toInsert = new AgaveTaskGuide("agaveAppStart", AgaveRequestType::AGAVE_PIPE_UPLOAD);
@@ -516,6 +590,12 @@ void AgaveHandler::setupTaskGuideList()
     toInsert = new AgaveTaskGuide("getAgaveList", AgaveRequestType::AGAVE_GET);
     toInsert->setURLsuffix(QString("/apps/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("getJobList", AgaveRequestType::AGAVE_GET);
+    toInsert->setURLsuffix(QString("/jobs/v2"));
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    toInsert->setAsInternal();
     insertAgaveTaskGuide(toInsert);
 }
 
@@ -553,7 +633,7 @@ void AgaveHandler::forwardReplyToParent(AgaveTaskReply * agaveReply, RequestStat
     {
         return;
     }
-    parentReply->invokePassThruReply(replyState, param1);
+    parentReply->delayedPassThruReply(replyState, param1);
 }
 
 void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply * rawReply)
@@ -691,6 +771,8 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 authGained = true;
                 attemptingAuth = false;
 
+                remoteQueryForJobList();
+
                 forwardReplyToParent(agaveReply, RequestState::GOOD);
                 qDebug("Login success.");
             }
@@ -714,6 +796,18 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 return;
             }
             //TODO: Will need more info here based on when, how and where refreshes are requested
+        }
+    }
+    else if (taskID == "getJobList")
+    {
+        if ((prelimResult == RequestState::GOOD) && (parseHandler.object().value("result").isArray()))
+        {
+            QJsonArray jobList = parseHandler.object().value("result").toArray();
+            parseAndUpdateJobList(jobList);
+        }
+        else
+        {
+            qDebug("Job Listing failed");
         }
     }
     else
@@ -776,26 +870,12 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList 
     {
         QObject::connect(ret, SIGNAL(haveInternalTaskReply(AgaveTaskReply*,QNetworkReply*)), this, SLOT(handleInternalTask(AgaveTaskReply*,QNetworkReply*)));
     }
-    if (taskGuide->hasStoredParam())
-    {
-        QStringList * listToStore = NULL;
-        if (taskGuide->getStoredParamList() == 0)
-        {
-            listToStore = paramList0;
-        }
-        else if (taskGuide->getStoredParamList() == 1)
-        {
-            listToStore = paramList1;
-        }
-        if (listToStore != NULL)
-        {
-            if (listToStore->size() > taskGuide->getStoredParamElement())
-            {
-                ret->setDataStore(listToStore->at(taskGuide->getStoredParamElement()));
-            }
-        }
 
+    if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_APP)
+    {
+        longRunningList.append((AgaveLongRunning *) (ret->getLongRunningRef(false)));
     }
+
     return ret;
 }
 
@@ -1011,4 +1091,109 @@ QString AgaveHandler::getTenantURL()
 void AgaveHandler::forwardAgaveError(QString errorText)
 {
     emit sendFatalErrorMessage(errorText);
+}
+
+QList<LongRunningTask *> AgaveHandler::getListOfLongTasks()
+{
+    QList<LongRunningTask *> ret;
+
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        ret.append((LongRunningTask *)(*itr));
+    }
+
+    return ret;
+}
+
+LongRunningTask * AgaveHandler::getLongTaskByRef(QString IDstr)
+{
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        if (((*itr)->getState() != LongRunningState::INIT) && ((*itr)->getIDstr() == IDstr))
+        {
+            return (LongRunningTask *) (*itr);
+        }
+    }
+    return NULL;
+}
+
+void AgaveHandler::stopLongRunnging(AgaveLongRunning * taskToStop)
+{
+    if (!longRunningList.contains(taskToStop)) return;
+
+    if ((taskToStop->getState() == LongRunningState::PENDING) ||
+            (taskToStop->getState() == LongRunningState::RUNNING))
+    {
+        taskToStop->changeState(LongRunningState::PURGING);
+        //DOLINE: need to invoke an agave action to cancel the task
+    }
+}
+
+void AgaveHandler::purgeLongRunning(AgaveLongRunning * taskToForget)
+{
+    if (longRunningList.contains(taskToForget))
+    {
+        longRunningList.removeAll(taskToForget);
+    }
+    //DOLINE: need to invoke an agave action to purge the task
+
+    taskToForget->deleteLater();
+}
+
+void AgaveHandler::remoteQueryForJobList()
+{
+    qDebug("Getting list of outstanding Agave Jobs");
+    performAgaveQuery("getJobList",NULL,NULL,NULL);
+}
+
+void AgaveHandler::parseAndUpdateJobList(QJsonArray newJobList)
+{ //TODO: This is messy and will need revision
+    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
+    {
+        QString nameToFind = (*itr)->getIDstr();
+        bool foundNewInfo = false;
+
+        if (((*itr)->getState() != LongRunningState::PENDING) &&
+                ((*itr)->getState() != LongRunningState::RUNNING))
+        {
+            continue;
+        }
+
+        for (auto itr2 = newJobList.constBegin(); itr2 != newJobList.constEnd(); itr2++)
+        {
+            if ((*itr2).isObject() && (*itr2).toObject().value("id").toString() == nameToFind)
+            {
+                foundNewInfo = true;
+                (*itr)->parseJSONdescription((*itr2).toObject());
+                break;
+            }
+        }
+        if (foundNewInfo == false)
+        {
+            (*itr)->changeState(LongRunningState::ERROR);
+        }
+    }
+
+    for (auto itr = newJobList.constBegin(); itr != newJobList.constEnd(); itr++)
+    {   
+        bool alreadyHaveEntry = false;
+        for (auto itr2 = longRunningList.cbegin(); itr2 != longRunningList.cend(); itr2++)
+        {
+            if ((*itr).toObject().value("id").toString() == (*itr2)->getIDstr())
+            {
+                alreadyHaveEntry = true;
+                break;
+            }
+        }
+
+        if ((alreadyHaveEntry == false) && (!(*itr).toObject().value("id").toString().isEmpty()))
+        {
+            AgaveLongRunning * newEntry = new AgaveLongRunning(NULL,this);
+            longRunningList.append(newEntry);
+            newEntry->setIDstr((*itr).toObject().value("id").toString());
+            newEntry->parseJSONdescription((*itr).toObject());
+        }
+    }
+
+    emit longRunningTasksUpdated();
 }

@@ -33,10 +33,52 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#include "remotedatainterface.h"
+#ifndef AGAVELONGRUNNING_H
+#define AGAVELONGRUNNING_H
 
-RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
+#include "../remotedatainterface.h"
 
-RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
+#include <QObject>
+#include <QMultiMap>
 
-LongRunningTask::LongRunningTask(QObject * parent):QObject(parent) {}
+#include <QJsonDocument>
+#include <QJsonObject>
+
+class AgaveHandler;
+
+class AgaveLongRunning : public LongRunningTask
+{
+    Q_OBJECT
+
+public:
+    AgaveLongRunning(QMultiMap<QString, QString> * newParamList, AgaveHandler * manager);
+    ~AgaveLongRunning();
+
+    virtual void cancelTask();
+    virtual void purgeTaskData();
+    virtual LongRunningState getState();
+
+    virtual QString getIDstr();
+    virtual QString getRawDataStr();
+
+    virtual QMultiMap<QString, QString> * getTaskParamList();
+
+    void setIDstr(QString newID);
+    void changeState(LongRunningState newState);
+    void setRawDataStr(QString newRawData);
+    void parseJSONdescription(QJsonObject taskJSONdesc);
+
+signals:
+    void stateChange(LongRunningState oldState, LongRunningState newState);
+
+private:
+    AgaveHandler * myManager;
+    QMultiMap<QString, QString> * taskParamList = NULL;
+
+    QString myIDstr;
+    QString myRawData;
+
+    LongRunningState myState;
+};
+
+#endif // AGAVELONGRUNNING_H

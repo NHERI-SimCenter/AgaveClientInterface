@@ -149,28 +149,6 @@ void AgaveTaskGuide::setPostParams(QString format, int numSubs)
     numPostVals = numSubs;
 }
 
-void AgaveTaskGuide::setStoreParam(int paramList, int elementToStore)
-{
-    storeParamInReply = true;
-    storeParamList = paramList;
-    storeParamElement = elementToStore;
-}
-
-bool AgaveTaskGuide::hasStoredParam()
-{
-    return storeParamInReply;
-}
-
-int AgaveTaskGuide::getStoredParamList()
-{
-    return storeParamList;
-}
-
-int AgaveTaskGuide::getStoredParamElement()
-{
-    return storeParamElement;
-}
-
 bool AgaveTaskGuide::usesPostParms()
 {
     return needsPostParams;

@@ -35,18 +35,21 @@
 
 #include "agavetaskreply.h"
 
+#include "agavelongrunning.h"
 #include "agavetaskguide.h"
 #include "agavehandler.h"
+
+#include "../AgaveClientInterface/filemetadata.h"
 
 AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newReply, AgaveHandler *theManager, QObject *parent) : RemoteDataReply(parent)
 {
     myManager = theManager;
     myGuide = theGuide;
 
+    //TODO: Need a more graceful checking mechanism for if myManager is specfied
+
     if (myGuide == NULL)
     {
-        //Note: this also checks that the myManager is specified.
-        //Note: There should probably be a more graceful way of checking for this.
         myManager->forwardAgaveError("Task Reply has no task guide.");
         return;
     }
@@ -57,9 +60,21 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
         return;
     }
 
+    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
+    {
+        pendingReply = RequestState::NO_CONNECT;
+    }
+
     if (myReplyObject != NULL)
     {
         QObject::connect(myReplyObject, SIGNAL(finished()), this, SLOT(rawTaskComplete()));
+    }
+
+    taskParamList = new QMultiMap<QString, QString>();
+
+    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_APP)
+    {
+        longRunRef = new AgaveLongRunning(taskParamList, myManager);
     }
 }
 
@@ -69,6 +84,41 @@ AgaveTaskReply::~AgaveTaskReply()
     {
         myReplyObject->deleteLater();
     }
+    if (longRunRefTaken)
+    {
+        if ((longRunRef == NULL) && (taskParamList != NULL))
+        {
+            delete taskParamList;
+        }
+    }
+    else
+    {
+        if (longRunRef != NULL)
+        {
+            myManager->purgeLongRunning(longRunRef);
+        }
+        if (taskParamList != NULL)
+        {
+            delete taskParamList;
+        }
+    }
+}
+
+LongRunningTask * AgaveTaskReply::getLongRunningRef(bool claimRef)
+{
+    if (longRunRef != NULL)
+    {
+        if (claimRef == true)
+        {
+            longRunRefTaken = true;
+        }
+    }
+    return (LongRunningTask *) longRunRef;
+}
+
+QMultiMap<QString, QString> * AgaveTaskReply::getTaskParamList()
+{
+    return taskParamList;
 }
 
 void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * param1)
@@ -79,7 +129,6 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
         return;
     }
 
-    haveReplyStore = true;
     pendingReply = replyState;
     if (param1 == NULL)
     {
@@ -95,7 +144,7 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
     quickTimer->start(1);
 }
 
-void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * param1)
+void AgaveTaskReply::invokePassThruReply()
 {
     this->deleteLater();
     if (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE)
@@ -105,17 +154,17 @@ void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * para
     }
     if (myGuide->getTaskID() == "changeDir")
     {
-        emit haveCurrentRemoteDir(replyState, param1);
+        emit haveCurrentRemoteDir(pendingReply, &pendingParam);
         return;
     }
     if (myGuide->getTaskID() == "fullAuth")
     {
-        emit haveAuthReply(replyState);
+        emit haveAuthReply(pendingReply);
         return;
     }
     if (myGuide->getTaskID() == "waitAll")
     {
-        emit connectionsClosed(replyState);
+        emit connectionsClosed(pendingReply);
         return;
     }
 
@@ -126,11 +175,6 @@ void AgaveTaskReply::invokePassThruReply(RequestState replyState, QString * para
 AgaveTaskGuide * AgaveTaskReply::getTaskGuide()
 {
     return myGuide;
-}
-
-void AgaveTaskReply::setDataStore(QString newSetting)
-{
-    dataStore = newSetting;
 }
 
 void AgaveTaskReply::processNoContactReply(QString errorText)
@@ -153,6 +197,7 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "authRefresh")
     {
+        //TODO: Auth refresh needs to be implemented
         myManager->forwardAgaveError("Auth refresh not implemented");
     }
     else if (myGuide->getTaskID() == "dirListing")
@@ -165,7 +210,7 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
-        emit haveDeleteReply(replyState, NULL);
+        emit haveDeleteReply(replyState);
     }
     else if (myGuide->getTaskID() == "newFolder")
     {
@@ -173,11 +218,23 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "renameFile")
     {
-        emit haveRenameReply(replyState, NULL, NULL);
+        emit haveRenameReply(replyState, NULL);
+    }
+    else if (myGuide->getTaskID() == "fileMove")
+    {
+        emit haveMoveReply(replyState, NULL);
     }
     else if (myGuide->getTaskID() == "fileDownload")
     {
-        emit haveDownloadReply(replyState, NULL);
+        emit haveDownloadReply(replyState);
+    }
+    else if (myGuide->getTaskID() == "filePipeUpload")
+    {
+        emit haveBufferDownloadReply(replyState, NULL);
+    }
+    else if (myGuide->getTaskID() == "filePipeDownload")
+    {
+        emit haveUploadReply(replyState, NULL);
     }
     else
     {
@@ -191,14 +248,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
     {
-        if (haveReplyStore == false)
-        {
-            invokePassThruReply(RequestState::NO_CONNECT);
-        }
-        else
-        {
-            invokePassThruReply(pendingReply, &pendingParam);
-        }
+        invokePassThruReply();
         return;
     }
 
@@ -222,12 +272,12 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }
 
-    const QByteArray replyText = myReplyObject->readAll();
+    QByteArray replyText = myReplyObject->readAll();
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
     {
         //TODO: consider a better way of doing this for larger files
-        QFile * fileHandle = new QFile(dataStore);
+        QFile * fileHandle = new QFile(taskParamList->value("localDest"));
         if (!fileHandle->open(QIODevice::WriteOnly))
         {
             processFailureReply("Could not open local file for writing");
@@ -241,7 +291,14 @@ void AgaveTaskReply::rawTaskComplete()
         fileHandle->close();
         fileHandle->deleteLater();
 
-        emit haveDownloadReply(RequestState::GOOD, &dataStore);
+        emit haveDownloadReply(RequestState::GOOD);
+        return;
+    }
+    else if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
+    {
+        //TODO: consider a better way of doing this for larger files
+
+        emit haveBufferDownloadReply(RequestState::GOOD, &replyText);
         return;
     }
 
@@ -301,7 +358,7 @@ void AgaveTaskReply::rawTaskComplete()
         }
         emit haveLSReply(RequestState::GOOD, &fileList);
     }
-    else if (myGuide->getTaskID() == "fileUpload")
+    else if ((myGuide->getTaskID() == "fileUpload") || (myGuide->getTaskID() == "filePipeUpload"))
     {
         QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
@@ -314,7 +371,7 @@ void AgaveTaskReply::rawTaskComplete()
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
-        emit haveDeleteReply(RequestState::GOOD, &dataStore);
+        emit haveDeleteReply(RequestState::GOOD);
     }
     else if (myGuide->getTaskID() == "newFolder")
     {
@@ -336,7 +393,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveRenameReply(RequestState::GOOD, &dataStore, &aFile);
+        emit haveRenameReply(RequestState::GOOD, &aFile);
     }
     else if (myGuide->getTaskID() == "fileCopy")
     {
@@ -358,10 +415,19 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveMoveReply(RequestState::GOOD, &dataStore, &aFile);
+        emit haveMoveReply(RequestState::GOOD, &aFile);
     }
     else
     {
+        if (longRunRef == NULL)
+        {
+            processFailureReply("Invalid data structures for long running tasks.");
+            return;
+        }
+        longRunRef->setIDstr("Debug placeholder");
+        //DOLINE: This will fail. Need to get Json example of a job start reply
+        //After this, we fill in the data for the long running reference.
+
         emit haveJobReply(RequestState::GOOD, &parseHandler);
     }
 }

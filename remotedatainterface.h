@@ -46,34 +46,32 @@
 enum class RequestState {FAIL, GOOD, NO_CONNECT};
 //If RemoteDataReply returned is NULL, then the request was invalid due to internal error
 
-enum class FileType {FILE, DIR, SIM_LINK, EMPTY_FOLDER, INVALID, UNLOADED}; //Add more as needed
+enum class LongRunningState {INIT, PENDING, RUNNING, DONE, ERROR, PURGING}; //Add more if needed
 
-class FileMetaData
+class FileMetaData;
+
+class LongRunningTask : public QObject
 {
+    Q_OBJECT
+
 public:
-    FileMetaData();
-    bool operator==(const FileMetaData & toCompare);
+    LongRunningTask(QObject * parent);
 
-    void setFullFilePath(QString fullPath);
-    void setSize(int newSize);
-    void setType(FileType newType);
+    virtual void cancelTask() = 0;
+    virtual void purgeTaskData() = 0;
+    virtual LongRunningState getState() = 0;
 
-    QString getFullPath() const;
-    QString getFileName() const;
-    QString getContainingPath() const;
-    int getSize() const;
-    FileType getFileType() const;
-    QString getFileTypeString() const;
+    virtual QString getIDstr() = 0;
+    virtual QString getRawDataStr() = 0;
 
-    static QStringList getPathNameList(QString fullPath);
-    static QString cleanPathSlashes(QString fullPath);
+    //If one needs to know the parameters passed to the initial task,
+    //find them returned here:
+    virtual QMultiMap<QString, QString> * getTaskParamList() = 0;
+    //The object returned here is destroyed with the LongRunningTask
 
-private:
-    //Add more members as needed, all must have reasonable defaults, and be handled in copy constructor
-    QString fullContainingPath; //ie. full path without this files own name
-    QString fileName;
-    int fileSize = 0; //in bytes?
-    FileType myType = FileType::INVALID;
+signals:
+    void stateChange(LongRunningState oldState, LongRunningState newState);
+
 };
 
 class RemoteDataReply : public QObject
@@ -83,22 +81,32 @@ class RemoteDataReply : public QObject
 public:
     RemoteDataReply(QObject * parent);
 
+    virtual LongRunningTask * getLongRunningRef(bool claimRef = true) = 0;
+
+    //If one needs to know the parameters passed to the initial task,
+    //find them returned here:
+    virtual QMultiMap<QString, QString> * getTaskParamList() = 0;
+    //The object returned here is destroyed with the RemoteDataReply, unless
+    //there is a LongRunningTask for this request.
+
 signals:
+    //All referenced values should be copied by the reciever or they will be discarded
     void haveCurrentRemoteDir(RequestState cmdReply, QString * pwd);
     void connectionsClosed(RequestState cmdReply);
 
     void haveAuthReply(RequestState authReply);
     void haveLSReply(RequestState cmdReply, QList<FileMetaData> * fileDataList);
 
-    void haveDeleteReply(RequestState replyState, QString * oldFilePath);
-    void haveMoveReply(RequestState authReply, QString * oldFilePath, FileMetaData * revisedFileData);
+    void haveDeleteReply(RequestState replyState);
+    void haveMoveReply(RequestState authReply, FileMetaData * revisedFileData);
     void haveCopyReply(RequestState authReply, FileMetaData * newFileData);
-    void haveRenameReply(RequestState replyState, QString * oldFilePath, FileMetaData * newFileData);
+    void haveRenameReply(RequestState replyState, FileMetaData * newFileData);
 
     void haveMkdirReply(RequestState authReply, FileMetaData * newFolderData);
 
     void haveUploadReply(RequestState authReply, FileMetaData * newFileData);
-    void haveDownloadReply(RequestState authReply, QString * localDest);
+    void haveDownloadReply(RequestState authReply);
+    void haveBufferDownloadReply(RequestState authReply, QByteArray * fileBuffer);
 
     //Job replys should be in an intelligble format, JSON is used by Agave and AWS for various things
     void haveJobReply(RequestState authReply, QJsonDocument * rawJobReply);
@@ -128,15 +136,22 @@ public:
     virtual RemoteDataReply * copyFile(QString from, QString to) = 0;
     virtual RemoteDataReply * renameFile(QString fullName, QString newName) = 0;
 
-    virtual RemoteDataReply * mkRemoteDir(QString loc, QString newName) = 0;
+    virtual RemoteDataReply * mkRemoteDir(QString location, QString newName) = 0;
 
-    virtual RemoteDataReply * uploadFile(QString loc, QString localFileName) = 0;
+    virtual RemoteDataReply * uploadFile(QString location, QString localFileName) = 0;
+    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData) = 0;
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName) = 0;
+    virtual RemoteDataReply * downloadBuffer(QString localDest, QString remoteName) = 0;
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
+    virtual void forceRefreshOfLongTasks() = 0;
+    virtual QList<LongRunningTask *> getListOfLongTasks() = 0;
+    virtual LongRunningTask * getLongTaskByRef(QString IDstr) = 0;
+
 signals:
     void sendFatalErrorMessage(QString errorText);
+    void longRunningTasksUpdated();
 };
 
 #endif // REMOTEDATAINTERFACE_H
