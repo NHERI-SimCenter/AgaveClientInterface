@@ -318,6 +318,11 @@ RemoteDataReply * AgaveHandler::getAgaveAppList()
     return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
 }
 
+void AgaveHandler::forceRefreshOfLongTasks()
+{
+    remoteQueryForJobList();
+}
+
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
 {
     //This function is only for Agave Jobs

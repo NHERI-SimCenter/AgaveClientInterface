@@ -145,6 +145,7 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
+    virtual void forceRefreshOfLongTasks() = 0;
     virtual QList<LongRunningTask *> getListOfLongTasks() = 0;
     virtual LongRunningTask * getLongTaskByRef(QString IDstr) = 0;
 

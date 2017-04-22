@@ -115,6 +115,7 @@ void AgaveLongRunning::parseJSONdescription(QJsonObject jobData)
         return;
     }
 
+    myRawData = "";
     myRawData = myRawData.append(jobData.value("id").toString());
     myRawData = myRawData.append(" - ");
     myRawData = myRawData.append(jobData.value("appId").toString());

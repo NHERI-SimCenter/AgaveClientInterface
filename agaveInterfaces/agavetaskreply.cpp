@@ -220,6 +220,10 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     {
         emit haveRenameReply(replyState, NULL);
     }
+    else if (myGuide->getTaskID() == "fileMove")
+    {
+        emit haveMoveReply(replyState, NULL);
+    }
     else if (myGuide->getTaskID() == "fileDownload")
     {
         emit haveDownloadReply(replyState);
