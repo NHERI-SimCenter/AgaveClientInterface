@@ -836,7 +836,7 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QString para
 
 AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList * paramList0, QStringList * paramList1, QObject * parentReq)
 {
-    if (networkHandle.networkAccessible() != QNetworkAccessManager::Accessible)
+    if (networkHandle.networkAccessible() == QNetworkAccessManager::NotAccessible)
     {
         emit sendFatalErrorMessage("Network not available");
         return NULL;
