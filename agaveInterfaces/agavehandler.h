@@ -118,10 +118,6 @@ public:
     //For debugging purposes, to retrive the list of available Agave Apps:
     RemoteDataReply * getAgaveAppList();
 signals:
-    void sendFatalErrorMessage(QString errorText);
-    void longRunningTasksUpdated();
-
-    //Agave specific signal:
     void finishedAllTasks();
 
 private slots:

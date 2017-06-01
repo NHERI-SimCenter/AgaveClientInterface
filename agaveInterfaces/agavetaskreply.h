@@ -79,25 +79,6 @@ public:
     static QJsonValue recursiveJSONdig(QJsonValue currObj, QList<QString> * keyList, int i);
 
 signals:
-    void haveCurrentRemoteDir(RequestState cmdReply, QString * pwd);
-    void connectionsClosed(RequestState cmdReply);
-
-    void haveAuthReply(RequestState authReply);
-    void haveLSReply(RequestState cmdReply, QList<FileMetaData> * fileDataList);
-
-    void haveDeleteReply(RequestState replyState);
-    void haveMoveReply(RequestState replyState, FileMetaData * revisedFileData);
-    void haveCopyReply(RequestState replyState, FileMetaData * newFileData);
-    void haveRenameReply(RequestState replyState, FileMetaData * newFileData);
-
-    void haveMkdirReply(RequestState replyState, FileMetaData * newFolderData);
-
-    void haveUploadReply(RequestState replyState, FileMetaData * newFileData);
-    void haveDownloadReply(RequestState replyState);
-    void haveBufferDownloadReply(RequestState authReply, QByteArray * fileBuffer);
-
-    void haveJobReply(RequestState replyState, QJsonDocument * rawJobReply);
-
     //For redirecting info to the Agave handler:
     void haveInternalTaskReply(AgaveTaskReply * theGuide, QNetworkReply * rawReply);
 
