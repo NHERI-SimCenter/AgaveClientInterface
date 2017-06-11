@@ -302,13 +302,12 @@ RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteNa
     return (RemoteDataReply *) theReply;
 }
 
-RemoteDataReply * AgaveHandler::downloadBuffer(QString localDest, QString remoteName)
+RemoteDataReply * AgaveHandler::downloadBuffer(QString remoteName)
 {
-    //TODO: check path and local path
+    //TODO: check path
     QString toCheck = getPathReletiveToCWD(remoteName);
-    AgaveTaskReply * theReply = performAgaveQuery("filePipeDownload", toCheck, localDest);
+    AgaveTaskReply * theReply = performAgaveQuery("filePipeDownload", toCheck);
     theReply->getTaskParamList()->insert("remoteName", toCheck);
-    theReply->getTaskParamList()->insert("localDest", localDest);
 
     return (RemoteDataReply *) theReply;
 }
@@ -836,7 +835,7 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QString para
 
 AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList * paramList0, QStringList * paramList1, QObject * parentReq)
 {
-    if (networkHandle.networkAccessible() != QNetworkAccessManager::Accessible)
+    if (networkHandle.networkAccessible() == QNetworkAccessManager::NotAccessible)
     {
         emit sendFatalErrorMessage("Network not available");
         return NULL;
@@ -982,6 +981,13 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
                          authHeader, emptyPostData);
     }
+    else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
+    {
+        QByteArray emptyPostData;
+
+        return finalizeAgaveRequest(taskGuide, realURLsuffix,
+                         authHeader, emptyPostData);
+    }
     else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD)
     {
         qDebug("Post Data: \n%s", qPrintable(clientPostData));
@@ -1037,7 +1043,8 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
 
     qDebug("%s", qPrintable(clientRequest->url().url()));
 
-    if ((theGuide->getRequestType() == AgaveRequestType::AGAVE_GET) || (theGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD))
+    if ((theGuide->getRequestType() == AgaveRequestType::AGAVE_GET) || (theGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
+            || (theGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD))
     {
         clientReply = networkHandle.get(*clientRequest);
     }

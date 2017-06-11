@@ -90,7 +90,7 @@ public:
     virtual RemoteDataReply * uploadFile(QString location, QString localFileName);
     virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
-    virtual RemoteDataReply * downloadBuffer(QString localDest, QString remoteName);
+    virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
@@ -118,10 +118,6 @@ public:
     //For debugging purposes, to retrive the list of available Agave Apps:
     RemoteDataReply * getAgaveAppList();
 signals:
-    void sendFatalErrorMessage(QString errorText);
-    void longRunningTasksUpdated();
-
-    //Agave specific signal:
     void finishedAllTasks();
 
 private slots:

@@ -1,4 +1,5 @@
-# AgaveClientInterface
-Base Repo for the Agave Client Library
+Readme for the Agave to QT Client Interface
 
-This is a test edit 2
+This library is intended to be included in QT projects which seek to access Agave resources.
+
+This folder should be placed in the same folder next to the project which uses it.
