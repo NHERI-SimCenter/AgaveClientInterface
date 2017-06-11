@@ -90,7 +90,7 @@ public:
     virtual RemoteDataReply * uploadFile(QString location, QString localFileName);
     virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
-    virtual RemoteDataReply * downloadBuffer(QString localDest, QString remoteName);
+    virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
