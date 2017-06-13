@@ -835,11 +835,15 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QString para
 
 AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList * paramList0, QStringList * paramList1, QObject * parentReq)
 {
+    //The network availabilty flag seems innacurate cross-platform
+    //Failed task invocations return NULL from this function.
+    /*
     if (networkHandle.networkAccessible() == QNetworkAccessManager::NotAccessible)
     {
         emit sendFatalErrorMessage("Network not available");
         return NULL;
     }
+    */
 
     if ((performingShutdown) && (queryName != "authRevoke"))
     {
@@ -1082,11 +1086,6 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
         fileUpload->setParent(clientReply);
     }
 
-    if (clientReply == NULL)
-    {
-        emit sendFatalErrorMessage("Non-existant request requested.2");
-        return NULL;
-    }
     return clientReply;
 }
 
