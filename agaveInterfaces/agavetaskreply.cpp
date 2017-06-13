@@ -204,7 +204,7 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     {
         emit haveLSReply(replyState, NULL);
     }
-    else if (myGuide->getTaskID() == "fileUpload")
+    else if ((myGuide->getTaskID() == "fileUpload") || (myGuide->getTaskID() == "filePipeUpload"))
     {
         emit haveUploadReply(replyState, NULL);
     }
@@ -224,17 +224,17 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     {
         emit haveMoveReply(replyState, NULL);
     }
+    else if (myGuide->getTaskID() == "fileCopy")
+    {
+        emit haveCopyReply(replyState,NULL);
+    }
     else if (myGuide->getTaskID() == "fileDownload")
     {
         emit haveDownloadReply(replyState);
     }
-    else if (myGuide->getTaskID() == "filePipeUpload")
-    {
-        emit haveBufferDownloadReply(replyState, NULL);
-    }
     else if (myGuide->getTaskID() == "filePipeDownload")
     {
-        emit haveUploadReply(replyState, NULL);
+        emit haveBufferDownloadReply(replyState, NULL);
     }
     else
     {
