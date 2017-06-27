@@ -265,6 +265,11 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }    
 
+    if (testReply->error() == 403)
+    {
+        myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
+    }
+
     //If this task is an INTERNAL task, then the result is redirected to the manager
     if (myGuide->isInternal())
     {

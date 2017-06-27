@@ -651,7 +651,14 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
 
     if (parseHandler.isNull())
     {
-        forwardReplyToParent(agaveReply, RequestState::NO_CONNECT);
+        if (agaveReply->getTaskGuide()->getTaskID() == "getJobList")
+        {
+            qDebug("Job Listing failed");
+        }
+        else
+        {
+            forwardReplyToParent(agaveReply, RequestState::NO_CONNECT);
+        }
         return;
     }
 
