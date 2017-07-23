@@ -34,12 +34,11 @@
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
 #include "agavetaskreply.h"
-
-#include "agavelongrunning.h"
 #include "agavetaskguide.h"
 #include "agavehandler.h"
 
 #include "../AgaveClientInterface/filemetadata.h"
+#include "../AgaveClientInterface/remotejobdata.h"
 
 AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newReply, AgaveHandler *theManager, QObject *parent) : RemoteDataReply(parent)
 {
@@ -71,11 +70,6 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
     }
 
     taskParamList = new QMultiMap<QString, QString>();
-
-    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_APP)
-    {
-        longRunRef = new AgaveLongRunning(taskParamList, myManager);
-    }
 }
 
 AgaveTaskReply::~AgaveTaskReply()
@@ -84,36 +78,10 @@ AgaveTaskReply::~AgaveTaskReply()
     {
         myReplyObject->deleteLater();
     }
-    if (longRunRefTaken)
+    if (taskParamList != NULL)
     {
-        if ((longRunRef == NULL) && (taskParamList != NULL))
-        {
-            delete taskParamList;
-        }
+        delete taskParamList;
     }
-    else
-    {
-        if (longRunRef != NULL)
-        {
-            myManager->purgeLongRunning(longRunRef);
-        }
-        if (taskParamList != NULL)
-        {
-            delete taskParamList;
-        }
-    }
-}
-
-LongRunningTask * AgaveTaskReply::getLongRunningRef(bool claimRef)
-{
-    if (longRunRef != NULL)
-    {
-        if (claimRef == true)
-        {
-            longRunRefTaken = true;
-        }
-    }
-    return (LongRunningTask *) longRunRef;
 }
 
 QMultiMap<QString, QString> * AgaveTaskReply::getTaskParamList()
@@ -235,6 +203,18 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     else if (myGuide->getTaskID() == "filePipeDownload")
     {
         emit haveBufferDownloadReply(replyState, NULL);
+    }
+    else if (myGuide->getTaskID() == "getJobList")
+    {
+        emit haveJobList(replyState, NULL);
+    }
+    else if (myGuide->getTaskID() == "getJobDetails")
+    {
+        emit haveJobDetails(replyState, NULL);
+    }
+    else if (myGuide->getTaskID() == "stopJob")
+    {
+        emit haveStoppedJob(replyState);
     }
     else
     {
@@ -422,19 +402,33 @@ void AgaveTaskReply::rawTaskComplete()
         }
         emit haveMoveReply(RequestState::GOOD, &aFile);
     }
-    else
+    else if (myGuide->getTaskID() == "getJobList")
     {
-        if (longRunRef == NULL)
+        QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
+        QList<RemoteJobData> jobList = parseJSONjobMetaData(expectedObject.toObject());
+
+        emit haveJobList(RequestState::GOOD, &jobList);
+    }
+    else if (myGuide->getTaskID() == "getJobDetails")
+    {
+        QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
+        RemoteJobData jobData = parseJSONjobDetails(expectedObject.toObject());
+        if (jobData.getState() == LongRunningState::INVALID)
         {
-            processFailureReply("Invalid data structures for long running tasks.");
+            processFailureReply("Invalid job data");
             return;
         }
-        longRunRef->setIDstr("Debug placeholder");
-        //DOLINE: This will fail. Need to get Json example of a job start reply
-        //After this, we fill in the data for the long running reference.
-
+        emit haveJobDetails(RequestState::GOOD, &jobData);
+    }
+    else if (myGuide->getTaskID() == "stopJob")
+    {
+        emit haveStoppedJob(RequestState::GOOD);
+    }
+    else
+    {
         emit haveJobReply(RequestState::GOOD, &parseHandler);
     }
+
 }
 
 RequestState AgaveTaskReply::standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc)
@@ -506,6 +500,41 @@ FileMetaData AgaveTaskReply::parseJSONfileMetaData(QJsonObject fileNameValuePair
     int fileLength = fileNameValuePairs.value("length").toInt();
     ret.setSize(fileLength);
 
+    return ret;
+}
+
+QList<RemoteJobData> AgaveTaskReply::parseJSONjobMetaData(QJsonObject)
+{
+    QList<RemoteJobData> ret;
+    //TODO
+    /*
+    if (!jobData.contains("id") || !jobData.contains("appId") || !jobData.contains("status"))
+    {
+        myRawData = "Job Info Error";
+        changeState(LongRunningState::ERROR);
+        return;
+    }
+
+    myRawData = "";
+    myRawData = myRawData.append(jobData.value("id").toString());
+    myRawData = myRawData.append(" - ");
+    myRawData = myRawData.append(jobData.value("appId").toString());
+    myRawData = myRawData.append(" - ");
+    myRawData = myRawData.append(jobData.value("status").toString());
+
+    //TODO: fill out this listing of state changes
+    if (jobData.value("status").toString() == "FINISHED")
+    {
+        changeState(LongRunningState::DONE);
+    }
+    */
+    return ret;
+}
+
+RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject)
+{
+    RemoteJobData ret;
+    //TODO
     return ret;
 }
 

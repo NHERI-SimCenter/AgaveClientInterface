@@ -38,5 +38,3 @@
 RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
 
 RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
-
-LongRunningTask::LongRunningTask(QObject * parent):QObject(parent) {}
