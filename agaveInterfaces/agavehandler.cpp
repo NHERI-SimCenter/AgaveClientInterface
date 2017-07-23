@@ -607,7 +607,6 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
 
-    //TODO: set these entries properly
     toInsert = new AgaveTaskGuide("getJobList", AgaveRequestType::AGAVE_GET);
     toInsert->setURLsuffix(QString("/jobs/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
