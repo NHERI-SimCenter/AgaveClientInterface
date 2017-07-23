@@ -46,33 +46,8 @@
 enum class RequestState {FAIL, GOOD, NO_CONNECT};
 //If RemoteDataReply returned is NULL, then the request was invalid due to internal error
 
-enum class LongRunningState {INIT, PENDING, RUNNING, DONE, ERROR, PURGING}; //Add more if needed
-
+class RemoteJobData;
 class FileMetaData;
-
-class LongRunningTask : public QObject
-{
-    Q_OBJECT
-
-public:
-    LongRunningTask(QObject * parent);
-
-    virtual void cancelTask() = 0;
-    virtual void purgeTaskData() = 0;
-    virtual LongRunningState getState() = 0;
-
-    virtual QString getIDstr() = 0;
-    virtual QString getRawDataStr() = 0;
-
-    //If one needs to know the parameters passed to the initial task,
-    //find them returned here:
-    virtual QMultiMap<QString, QString> * getTaskParamList() = 0;
-    //The object returned here is destroyed with the LongRunningTask
-
-signals:
-    void stateChange(LongRunningState oldState, LongRunningState newState);
-
-};
 
 class RemoteDataReply : public QObject
 {
@@ -81,35 +56,37 @@ class RemoteDataReply : public QObject
 public:
     RemoteDataReply(QObject * parent);
 
-    virtual LongRunningTask * getLongRunningRef(bool claimRef = true) = 0;
-
     //If one needs to know the parameters passed to the initial task,
     //find them returned here:
     virtual QMultiMap<QString, QString> * getTaskParamList() = 0;
-    //The object returned here is destroyed with the RemoteDataReply, unless
-    //there is a LongRunningTask for this request.
+    //The object returned here is destroyed with the RemoteDataReply
 
 signals:
     //All referenced values should be copied by the reciever or they will be discarded
-    void haveCurrentRemoteDir(RequestState cmdReply, QString * pwd);
-    void connectionsClosed(RequestState cmdReply);
+    void haveCurrentRemoteDir(RequestState replyState, QString * pwd);
+    void connectionsClosed(RequestState replyState);
 
     void haveAuthReply(RequestState authReply);
-    void haveLSReply(RequestState cmdReply, QList<FileMetaData> * fileDataList);
+    void haveLSReply(RequestState replyState, QList<FileMetaData> * fileDataList);
 
     void haveDeleteReply(RequestState replyState);
-    void haveMoveReply(RequestState authReply, FileMetaData * revisedFileData);
-    void haveCopyReply(RequestState authReply, FileMetaData * newFileData);
+    void haveMoveReply(RequestState replyState, FileMetaData * revisedFileData);
+    void haveCopyReply(RequestState replyState, FileMetaData * newFileData);
     void haveRenameReply(RequestState replyState, FileMetaData * newFileData);
 
-    void haveMkdirReply(RequestState authReply, FileMetaData * newFolderData);
+    void haveMkdirReply(RequestState replyState, FileMetaData * newFolderData);
 
-    void haveUploadReply(RequestState authReply, FileMetaData * newFileData);
-    void haveDownloadReply(RequestState authReply);
-    void haveBufferDownloadReply(RequestState authReply, QByteArray * fileBuffer);
+    void haveUploadReply(RequestState replyState, FileMetaData * newFileData);
+    void haveDownloadReply(RequestState replyState);
+    void haveBufferDownloadReply(RequestState replyState, QByteArray * fileBuffer);
 
     //Job replys should be in an intelligble format, JSON is used by Agave and AWS for various things
-    void haveJobReply(RequestState authReply, QJsonDocument * rawJobReply);
+    void haveJobReply(RequestState replyState, QJsonDocument * rawJobReply);
+
+    //TODO: implement these:
+    void haveJobList(RequestState replyState, QList<RemoteJobData> * jobList);
+    void haveJobDetails(RequestState replyState, RemoteJobData * jobData);
+    void haveStoppedJob(RequestState replyState);
 };
 
 class RemoteDataInterface : public QObject
@@ -145,13 +122,12 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
-    virtual void forceRefreshOfLongTasks() = 0;
-    virtual QList<LongRunningTask *> getListOfLongTasks() = 0;
-    virtual LongRunningTask * getLongTaskByRef(QString IDstr) = 0;
+    virtual RemoteDataReply * getListOfJobs() = 0;
+    virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;
+    virtual RemoteDataReply * stopJob(QString IDstr) = 0;
 
 signals:
     void sendFatalErrorMessage(QString errorText);
-    void longRunningTasksUpdated();
 };
 
 #endif // REMOTEDATAINTERFACE_H
