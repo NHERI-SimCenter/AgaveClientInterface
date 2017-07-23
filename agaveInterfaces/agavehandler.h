@@ -94,9 +94,9 @@ public:
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
-    virtual void forceRefreshOfLongTasks();
-    virtual QList<LongRunningTask *> getListOfLongTasks();
-    virtual LongRunningTask * getLongTaskByRef(QString IDstr);
+    virtual RemoteDataReply * getListOfJobs();
+    virtual RemoteDataReply * getJobDetails(QString IDstr);
+    virtual RemoteDataReply * stopJob(QString IDstr);
 
     //-----------------------------------------
     //Agave Specific Functions:
@@ -104,9 +104,6 @@ public:
     QString getTenantURL();
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
-
-    void stopLongRunnging(AgaveLongRunning * taskToStop);
-    void purgeLongRunning(AgaveLongRunning * taskToForget);
 
     //On Agave Apps:
     //Register info on the Agave App's parameters, using:
@@ -142,9 +139,6 @@ private:
 
     QString getPathReletiveToCWD(QString inputPath);
 
-    void remoteQueryForJobList();
-    void parseAndUpdateJobList(QJsonArray newJobList);
-
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;
     const QString tenantURL = "https://agave.designsafe-ci.org";
@@ -170,8 +164,6 @@ private:
     bool performingShutdown = false;
     bool authGained = false;
     bool attemptingAuth = false;
-
-    QList<AgaveLongRunning *> longRunningList;
 };
 
 #endif // AGAVEHANDLER_H

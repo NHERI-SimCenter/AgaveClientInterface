@@ -59,7 +59,6 @@ public:
     explicit AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply *newReply, AgaveHandler * theManager, QObject *parent = 0);
     ~AgaveTaskReply();
 
-    virtual LongRunningTask * getLongRunningRef(bool claimRef = true);
     virtual QMultiMap<QString, QString> * getTaskParamList();
 
     //-------------------------------------------------
@@ -72,6 +71,8 @@ public:
 
     static RequestState standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc);
     static FileMetaData parseJSONfileMetaData(QJsonObject fileNameValuePairs);
+    static QList<RemoteJobData> parseJSONjobMetaData(QJsonObject jobValuePairs);
+    static RemoteJobData parseJSONjobDetails(QJsonObject jobValuePairs);
 
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, const char * oneKey);
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QString oneKey);
@@ -101,8 +102,6 @@ private:
     QString pendingParam;
 
     QMultiMap<QString, QString> * taskParamList = NULL;
-    bool longRunRefTaken = false;
-    AgaveLongRunning * longRunRef = NULL;
 };
 
 #endif // AGAVETASKREPLY_H

@@ -36,9 +36,9 @@
 #include "agavehandler.h"
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
-#include "agavelongrunning.h"
 
-#include "../AgaveClientInterface/filemetadata.h"
+#include "../filemetadata.h"
+#include "../remotejobdata.h"
 
 //TODO: need to do more double checking of valid file paths
 
@@ -317,11 +317,6 @@ RemoteDataReply * AgaveHandler::getAgaveAppList()
     return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
 }
 
-void AgaveHandler::forceRefreshOfLongTasks()
-{
-    remoteQueryForJobList();
-}
-
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
 {
     //This function is only for Agave Jobs
@@ -403,6 +398,27 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
     theReply->getTaskParamList()->insert("jobName", jobName);
     theReply->getTaskParamList()->insert("remoteWorkingDir", remoteWorkingDir);
     *(theReply->getTaskParamList()) += jobParameters;
+
+    return (RemoteDataReply *) theReply;
+}
+
+RemoteDataReply * AgaveHandler::getListOfJobs()
+{
+    return (RemoteDataReply *) performAgaveQuery("getJobList", NULL, NULL, NULL);
+}
+
+RemoteDataReply * AgaveHandler::getJobDetails(QString IDstr)
+{
+    AgaveTaskReply * theReply = performAgaveQuery("getJobDetails", IDstr);
+    theReply->getTaskParamList()->insert("IDstr", IDstr);
+
+    return (RemoteDataReply *) theReply;
+}
+
+RemoteDataReply * AgaveHandler::stopJob(QString IDstr)
+{
+    AgaveTaskReply * theReply = performAgaveQuery("stopJob", IDstr);
+    theReply->getTaskParamList()->insert("IDstr", IDstr);
 
     return (RemoteDataReply *) theReply;
 }
@@ -591,10 +607,23 @@ void AgaveHandler::setupTaskGuideList()
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
 
+    //TODO: set these entries properly
     toInsert = new AgaveTaskGuide("getJobList", AgaveRequestType::AGAVE_GET);
     toInsert->setURLsuffix(QString("/jobs/v2"));
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
-    toInsert->setAsInternal();
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("getJobDetails", AgaveRequestType::AGAVE_GET);
+    toInsert->setURLsuffix(QString("/jobs/v2/"));
+    toInsert->setDynamicURLParams("%1",1);
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
+    insertAgaveTaskGuide(toInsert);
+
+    toInsert = new AgaveTaskGuide("stopJob", AgaveRequestType::AGAVE_POST);
+    toInsert->setURLsuffix(QString("/jobs/v2/"));
+    toInsert->setDynamicURLParams("%1",1);
+    toInsert->setPostParams("action=stop",0);
+    toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
 }
 
@@ -777,8 +806,6 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 authGained = true;
                 attemptingAuth = false;
 
-                remoteQueryForJobList();
-
                 forwardReplyToParent(agaveReply, RequestState::GOOD);
                 qDebug("Login success.");
             }
@@ -802,18 +829,6 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 return;
             }
             //TODO: Will need more info here based on when, how and where refreshes are requested
-        }
-    }
-    else if (taskID == "getJobList")
-    {
-        if ((prelimResult == RequestState::GOOD) && (parseHandler.object().value("result").isArray()))
-        {
-            QJsonArray jobList = parseHandler.object().value("result").toArray();
-            parseAndUpdateJobList(jobList);
-        }
-        else
-        {
-            qDebug("Job Listing failed");
         }
     }
     else
@@ -879,11 +894,6 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList 
     if (taskGuide->isInternal())
     {
         QObject::connect(ret, SIGNAL(haveInternalTaskReply(AgaveTaskReply*,QNetworkReply*)), this, SLOT(handleInternalTask(AgaveTaskReply*,QNetworkReply*)));
-    }
-
-    if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_APP)
-    {
-        longRunningList.append((AgaveLongRunning *) (ret->getLongRunningRef(false)));
     }
 
     return ret;
@@ -1104,109 +1114,4 @@ QString AgaveHandler::getTenantURL()
 void AgaveHandler::forwardAgaveError(QString errorText)
 {
     emit sendFatalErrorMessage(errorText);
-}
-
-QList<LongRunningTask *> AgaveHandler::getListOfLongTasks()
-{
-    QList<LongRunningTask *> ret;
-
-    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
-    {
-        ret.append((LongRunningTask *)(*itr));
-    }
-
-    return ret;
-}
-
-LongRunningTask * AgaveHandler::getLongTaskByRef(QString IDstr)
-{
-    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
-    {
-        if (((*itr)->getState() != LongRunningState::INIT) && ((*itr)->getIDstr() == IDstr))
-        {
-            return (LongRunningTask *) (*itr);
-        }
-    }
-    return NULL;
-}
-
-void AgaveHandler::stopLongRunnging(AgaveLongRunning * taskToStop)
-{
-    if (!longRunningList.contains(taskToStop)) return;
-
-    if ((taskToStop->getState() == LongRunningState::PENDING) ||
-            (taskToStop->getState() == LongRunningState::RUNNING))
-    {
-        taskToStop->changeState(LongRunningState::PURGING);
-        //DOLINE: need to invoke an agave action to cancel the task
-    }
-}
-
-void AgaveHandler::purgeLongRunning(AgaveLongRunning * taskToForget)
-{
-    if (longRunningList.contains(taskToForget))
-    {
-        longRunningList.removeAll(taskToForget);
-    }
-    //DOLINE: need to invoke an agave action to purge the task
-
-    taskToForget->deleteLater();
-}
-
-void AgaveHandler::remoteQueryForJobList()
-{
-    qDebug("Getting list of outstanding Agave Jobs");
-    performAgaveQuery("getJobList",NULL,NULL,NULL);
-}
-
-void AgaveHandler::parseAndUpdateJobList(QJsonArray newJobList)
-{ //TODO: This is messy and will need revision
-    for (auto itr = longRunningList.cbegin(); itr != longRunningList.cend(); itr++)
-    {
-        QString nameToFind = (*itr)->getIDstr();
-        bool foundNewInfo = false;
-
-        if (((*itr)->getState() != LongRunningState::PENDING) &&
-                ((*itr)->getState() != LongRunningState::RUNNING))
-        {
-            continue;
-        }
-
-        for (auto itr2 = newJobList.constBegin(); itr2 != newJobList.constEnd(); itr2++)
-        {
-            if ((*itr2).isObject() && (*itr2).toObject().value("id").toString() == nameToFind)
-            {
-                foundNewInfo = true;
-                (*itr)->parseJSONdescription((*itr2).toObject());
-                break;
-            }
-        }
-        if (foundNewInfo == false)
-        {
-            (*itr)->changeState(LongRunningState::ERROR);
-        }
-    }
-
-    for (auto itr = newJobList.constBegin(); itr != newJobList.constEnd(); itr++)
-    {   
-        bool alreadyHaveEntry = false;
-        for (auto itr2 = longRunningList.cbegin(); itr2 != longRunningList.cend(); itr2++)
-        {
-            if ((*itr).toObject().value("id").toString() == (*itr2)->getIDstr())
-            {
-                alreadyHaveEntry = true;
-                break;
-            }
-        }
-
-        if ((alreadyHaveEntry == false) && (!(*itr).toObject().value("id").toString().isEmpty()))
-        {
-            AgaveLongRunning * newEntry = new AgaveLongRunning(NULL,this);
-            longRunningList.append(newEntry);
-            newEntry->setIDstr((*itr).toObject().value("id").toString());
-            newEntry->parseJSONdescription((*itr).toObject());
-        }
-    }
-
-    emit longRunningTasksUpdated();
 }
