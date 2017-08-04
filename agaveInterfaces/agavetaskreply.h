@@ -71,8 +71,8 @@ public:
 
     static RequestState standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc);
     static FileMetaData parseJSONfileMetaData(QJsonObject fileNameValuePairs);
-    static QList<RemoteJobData> parseJSONjobMetaData(QJsonObject jobValuePairs);
-    static RemoteJobData parseJSONjobDetails(QJsonObject jobValuePairs);
+    static QList<RemoteJobData> parseJSONjobMetaData(QJsonArray rawJobList);
+    static RemoteJobData parseJSONjobDetails(QJsonObject rawJobData);
 
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, const char * oneKey);
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QString oneKey);
