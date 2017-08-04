@@ -405,7 +405,7 @@ void AgaveTaskReply::rawTaskComplete()
     else if (myGuide->getTaskID() == "getJobList")
     {
         QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
-        QList<RemoteJobData> jobList = parseJSONjobMetaData(expectedObject.toObject());
+        QList<RemoteJobData> jobList = parseJSONjobMetaData(expectedObject.toArray());
 
         emit haveJobList(RequestState::GOOD, &jobList);
     }
@@ -503,7 +503,7 @@ FileMetaData AgaveTaskReply::parseJSONfileMetaData(QJsonObject fileNameValuePair
     return ret;
 }
 
-QList<RemoteJobData> AgaveTaskReply::parseJSONjobMetaData(QJsonObject)
+QList<RemoteJobData> AgaveTaskReply::parseJSONjobMetaData(QJsonArray rawJobList)
 {
     QList<RemoteJobData> ret;
     //TODO
@@ -531,7 +531,7 @@ QList<RemoteJobData> AgaveTaskReply::parseJSONjobMetaData(QJsonObject)
     return ret;
 }
 
-RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject)
+RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject rawJobData)
 {
     RemoteJobData ret;
     //TODO

@@ -83,7 +83,6 @@ signals:
     //Job replys should be in an intelligble format, JSON is used by Agave and AWS for various things
     void haveJobReply(RequestState replyState, QJsonDocument * rawJobReply);
 
-    //TODO: implement these:
     void haveJobList(RequestState replyState, QList<RemoteJobData> * jobList);
     void haveJobDetails(RequestState replyState, RemoteJobData * jobData);
     void haveStoppedJob(RequestState replyState);
