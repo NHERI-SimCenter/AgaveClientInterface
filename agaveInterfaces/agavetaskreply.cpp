@@ -216,6 +216,10 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     {
         emit haveStoppedJob(replyState);
     }
+    else if (myGuide->getTaskID() == "haveAgaveAppList")
+    {
+        emit haveAgaveAppList(replyState, NULL);
+    }
     else
     {
         emit haveJobReply(replyState, NULL);
@@ -413,7 +417,7 @@ void AgaveTaskReply::rawTaskComplete()
     {
         QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
         RemoteJobData jobData = parseJSONjobDetails(expectedObject.toObject());
-        if (jobData.getState() == LongRunningState::INVALID)
+        if (jobData.getState() == "ERROR")
         {
             processFailureReply("Invalid job data");
             return;
@@ -423,6 +427,13 @@ void AgaveTaskReply::rawTaskComplete()
     else if (myGuide->getTaskID() == "stopJob")
     {
         emit haveStoppedJob(RequestState::GOOD);
+    }
+    else if (myGuide->getTaskID() == "getAgaveList")
+    {
+        //TODO More error checking here
+        QJsonValue expectedArray = retriveMainAgaveJSON(&parseHandler,"result");
+        QJsonArray appList = expectedArray.toArray();
+        emit haveAgaveAppList(RequestState::GOOD, &appList);
     }
     else
     {
@@ -506,35 +517,42 @@ FileMetaData AgaveTaskReply::parseJSONfileMetaData(QJsonObject fileNameValuePair
 QList<RemoteJobData> AgaveTaskReply::parseJSONjobMetaData(QJsonArray rawJobList)
 {
     QList<RemoteJobData> ret;
-    //TODO
-    /*
-    if (!jobData.contains("id") || !jobData.contains("appId") || !jobData.contains("status"))
+
+    for (auto itr = rawJobList.constBegin(); itr != rawJobList.constEnd(); itr++)
     {
-        myRawData = "Job Info Error";
-        changeState(LongRunningState::ERROR);
-        return;
+        ret.append(parseJSONjobDetails((*itr).toObject(), false));
     }
 
-    myRawData = "";
-    myRawData = myRawData.append(jobData.value("id").toString());
-    myRawData = myRawData.append(" - ");
-    myRawData = myRawData.append(jobData.value("appId").toString());
-    myRawData = myRawData.append(" - ");
-    myRawData = myRawData.append(jobData.value("status").toString());
-
-    //TODO: fill out this listing of state changes
-    if (jobData.value("status").toString() == "FINISHED")
-    {
-        changeState(LongRunningState::DONE);
-    }
-    */
     return ret;
 }
 
-RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject rawJobData)
+RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject rawJobData, bool haveDetails)
 {
-    RemoteJobData ret;
-    //TODO
+    RemoteJobData err;
+    if (!rawJobData.contains("id")) return err;
+    if (!rawJobData.contains("name")) return err;
+    if (!rawJobData.contains("appId")) return err;
+    if (!rawJobData.contains("created")) return err;
+    if (!rawJobData.contains("status")) return err;
+
+    if (haveDetails)
+    {
+        if (!rawJobData.contains("inputs")) return err;
+        if (!rawJobData.contains("parameters")) return err;
+    }
+
+    RemoteJobData ret(rawJobData.value("id").toString(),
+                      rawJobData.value("name").toString(),
+                      rawJobData.value("appId").toString(),
+                      parseAgaveTime(rawJobData.value("created").toString()));
+
+    if (haveDetails)
+    {
+        QMap<QString, QVariant> inputMap = rawJobData.value("inputs").toObject().toVariantMap();
+        QMap<QString, QVariant> paramMap = rawJobData.value("parameters").toObject().toVariantMap();
+        ret.setDetails(convertVarMapToString(inputMap),convertVarMapToString(paramMap));
+    }
+
     return ret;
 }
 
@@ -586,4 +604,56 @@ QJsonValue AgaveTaskReply::recursiveJSONdig(QJsonValue currVal, QList<QString> *
     }
 
     return recursiveJSONdig(targetedValue,keyList,i+1);
+}
+
+QDateTime AgaveTaskReply::parseAgaveTime(QString agaveTime)
+{
+    QDateTime err; //Default obj indicates error
+    //2017-03-29T15:14:00.000-05:00
+    QStringList dateAndTime = agaveTime.split('T');
+    if (dateAndTime.size() < 2) return err;
+
+    QString theDate = dateAndTime.at(0);
+    QString theTime = dateAndTime.at(1);
+
+    QStringList dateParts = theDate.split('-');
+    if (dateParts.size() < 3) return err;
+
+    QStringList timeParts = theTime.split(':');
+    if (timeParts.size() < 3) return err;
+
+    QString seconds = timeParts.at(2);
+    seconds.truncate(2);
+
+    bool convOkay;
+    int year = dateParts.at(0).toInt(&convOkay);
+    if (!convOkay) return err;
+    int mon = dateParts.at(1).toInt(&convOkay);
+    if (!convOkay) return err;
+    int day = dateParts.at(2).toInt(&convOkay);
+    if (!convOkay) return err;
+
+    int hour = timeParts.at(0).toInt(&convOkay);
+    if (!convOkay) return err;
+    int min = timeParts.at(1).toInt(&convOkay);
+    if (!convOkay) return err;
+    int sec = seconds.toInt(&convOkay);
+    if (!convOkay) return err;
+
+    QDate realDate(year, mon, day);
+    QTime realTime(hour, min, sec);
+
+    QDateTime ret(realDate,realTime);
+    return ret;
+}
+
+QMap<QString, QString> AgaveTaskReply::convertVarMapToString(QMap<QString, QVariant> inMap)
+{
+    //Note: This may be very slow. If it bogs down, find a faster way.
+    QMap<QString, QString> ret;
+    for (auto itr = inMap.cbegin(); itr != inMap.cend(); itr++)
+    {
+        ret.insert(itr.key(), itr.value().toString());
+    }
+    return ret;
 }
