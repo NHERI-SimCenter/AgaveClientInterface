@@ -38,7 +38,16 @@
 RemoteJobData::RemoteJobData()
 {
     myID = "ERROR";
-    myState = LongRunningState::INVALID;
+    myName = "ERROR";
+    myApp = "ERROR";
+}
+
+RemoteJobData::RemoteJobData(QString jobID, QString jobName, QString appName, QDateTime createTime)
+{
+    myID = jobID;
+    myName = jobName;
+    myApp = appName;
+    myCreatedTime = createTime;
 }
 
 QString RemoteJobData::getID()
@@ -46,17 +55,38 @@ QString RemoteJobData::getID()
     return myID;
 }
 
-void RemoteJobData::setJobID(QString newID)
+QString RemoteJobData::getName()
 {
-    myID = newID;
+    return myName;
 }
 
-LongRunningState RemoteJobData::getState()
+QString RemoteJobData::getApp()
+{
+    return myApp;
+}
+
+QString RemoteJobData::getState()
 {
     return myState;
 }
 
-void RemoteJobData::setState(LongRunningState newState)
+void RemoteJobData::setState(QString newState)
 {
     myState = newState;
+}
+
+QMap<QString, QString> RemoteJobData::getInputs()
+{
+    return inputList;
+}
+
+QMap<QString, QString> RemoteJobData::getParams()
+{
+    return paramList;
+}
+
+void RemoteJobData::setDetails(QMap<QString, QString> inputs, QMap<QString, QString> params)
+{
+    inputList = inputs;
+    paramList = params;
 }
