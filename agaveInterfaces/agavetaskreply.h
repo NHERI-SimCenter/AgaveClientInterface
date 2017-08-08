@@ -46,6 +46,9 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QTimer>
+#include <QDateTime>
+#include <QStringList>
+#include <QList>
 
 enum class RequestState;
 class AgaveHandler;
@@ -72,16 +75,20 @@ public:
     static RequestState standardSuccessFailCheck(AgaveTaskGuide * taskGuide, QJsonDocument * parsedDoc);
     static FileMetaData parseJSONfileMetaData(QJsonObject fileNameValuePairs);
     static QList<RemoteJobData> parseJSONjobMetaData(QJsonArray rawJobList);
-    static RemoteJobData parseJSONjobDetails(QJsonObject rawJobData);
+    static RemoteJobData parseJSONjobDetails(QJsonObject rawJobData, bool haveDetails = true);
 
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, const char * oneKey);
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QString oneKey);
     static QJsonValue retriveMainAgaveJSON(QJsonDocument * parsedDoc, QList<QString> keyList);
     static QJsonValue recursiveJSONdig(QJsonValue currObj, QList<QString> * keyList, int i);
 
+    static QDateTime parseAgaveTime(QString agaveTime);
+    static QMap<QString, QString> convertVarMapToString(QMap<QString, QVariant> inMap);
+
 signals:
     //For redirecting info to the Agave handler:
     void haveInternalTaskReply(AgaveTaskReply * theGuide, QNetworkReply * rawReply);
+    void haveAgaveAppList(RequestState theGuide, QJsonArray * appsList);
 
 private slots:
     void rawTaskComplete();

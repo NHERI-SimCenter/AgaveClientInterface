@@ -39,22 +39,37 @@
 
 #include <QObject>
 #include <QString>
+#include <QDateTime>
 
-enum class LongRunningState {INIT, PENDING, RUNNING, DONE, ERROR, PURGING, INVALID}; //Add more if needed
+#include <QMap>
 
 class RemoteJobData
 {
 public:
     RemoteJobData();
+    RemoteJobData(QString jobID, QString jobName, QString appName, QDateTime createTime);
 
     QString getID();
-    void setJobID(QString newID);
-    LongRunningState getState();
-    void setState(LongRunningState newState);
+    QString getName();
+    QString getApp();
+
+    QString getState();
+    void setState(QString newState);
+
+    QMap<QString, QString> getInputs();
+    QMap<QString, QString> getParams();
+    void setDetails(QMap<QString, QString> inputs, QMap<QString, QString> params);
 
 private:
     QString myID;
-    LongRunningState myState;
+    QString myName;
+    QString myState;
+    QString myApp;
+
+    QDateTime myCreatedTime;
+
+    QMap<QString, QString> inputList;
+    QMap<QString, QString> paramList;
 };
 
 #endif // REMOTEJOBDATA_H

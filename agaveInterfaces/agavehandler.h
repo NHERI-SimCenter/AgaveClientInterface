@@ -113,7 +113,7 @@ public:
     //and the remoteWorkingDir will be used as a input/parameter named in remoteDirParameter (optional)
 
     //For debugging purposes, to retrive the list of available Agave Apps:
-    RemoteDataReply * getAgaveAppList();
+    AgaveTaskReply * getAgaveAppList();
 signals:
     void finishedAllTasks();
 
