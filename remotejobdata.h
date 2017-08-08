@@ -33,52 +33,28 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#ifndef AGAVELONGRUNNING_H
-#define AGAVELONGRUNNING_H
 
-#include "../remotedatainterface.h"
+#ifndef REMOTEJOBDATA_H
+#define REMOTEJOBDATA_H
 
 #include <QObject>
-#include <QMultiMap>
+#include <QString>
 
-#include <QJsonDocument>
-#include <QJsonObject>
+enum class LongRunningState {INIT, PENDING, RUNNING, DONE, ERROR, PURGING, INVALID}; //Add more if needed
 
-class AgaveHandler;
-
-class AgaveLongRunning : public LongRunningTask
+class RemoteJobData
 {
-    Q_OBJECT
-
 public:
-    AgaveLongRunning(QMultiMap<QString, QString> * newParamList, AgaveHandler * manager);
-    ~AgaveLongRunning();
+    RemoteJobData();
 
-    virtual void cancelTask();
-    virtual void purgeTaskData();
-    virtual LongRunningState getState();
-
-    virtual QString getIDstr();
-    virtual QString getRawDataStr();
-
-    virtual QMultiMap<QString, QString> * getTaskParamList();
-
-    void setIDstr(QString newID);
-    void changeState(LongRunningState newState);
-    void setRawDataStr(QString newRawData);
-    void parseJSONdescription(QJsonObject taskJSONdesc);
-
-signals:
-    void stateChange(LongRunningState oldState, LongRunningState newState);
+    QString getID();
+    void setJobID(QString newID);
+    LongRunningState getState();
+    void setState(LongRunningState newState);
 
 private:
-    AgaveHandler * myManager;
-    QMultiMap<QString, QString> * taskParamList = NULL;
-
-    QString myIDstr;
-    QString myRawData;
-
+    QString myID;
     LongRunningState myState;
 };
 
-#endif // AGAVELONGRUNNING_H
+#endif // REMOTEJOBDATA_H
