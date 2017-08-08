@@ -312,9 +312,9 @@ RemoteDataReply * AgaveHandler::downloadBuffer(QString remoteName)
     return (RemoteDataReply *) theReply;
 }
 
-RemoteDataReply * AgaveHandler::getAgaveAppList()
+AgaveTaskReply *AgaveHandler::getAgaveAppList()
 {
-    return (RemoteDataReply *) performAgaveQuery("getAgaveList", NULL, NULL, NULL);
+    return performAgaveQuery("getAgaveList", NULL, NULL, NULL);
 }
 
 RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir)
