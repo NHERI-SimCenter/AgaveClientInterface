@@ -33,8 +33,30 @@
 // Contributors:
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#include "remotedatainterface.h"
+#include "remotejobdata.h"
 
-RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
+RemoteJobData::RemoteJobData()
+{
+    myID = "ERROR";
+    myState = LongRunningState::INVALID;
+}
 
-RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
+QString RemoteJobData::getID()
+{
+    return myID;
+}
+
+void RemoteJobData::setJobID(QString newID)
+{
+    myID = newID;
+}
+
+LongRunningState RemoteJobData::getState()
+{
+    return myState;
+}
+
+void RemoteJobData::setState(LongRunningState newState)
+{
+    myState = newState;
+}
