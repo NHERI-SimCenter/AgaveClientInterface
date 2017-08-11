@@ -874,6 +874,11 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QStringList 
 
     AgaveTaskGuide * taskGuide = retriveTaskGuide(queryName);
 
+    if ((!authGained) && (taskGuide->getHeaderType() == AuthHeaderType::TOKEN))
+    {
+        return NULL;
+    }
+
     QNetworkReply * qReply = internalQueryMethod(taskGuide, paramList0, paramList1);
 
     if (qReply == NULL)
