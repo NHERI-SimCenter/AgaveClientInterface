@@ -95,6 +95,8 @@ class RemoteDataInterface : public QObject
 public:
     RemoteDataInterface(QObject * parent);
 
+    virtual QString getUserName() = 0;
+
     //Defaults to directory root,
     //Subsequent commands with remote folder names are either absolute paths
     //or reletive to the current working directory

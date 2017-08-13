@@ -67,6 +67,8 @@ public:
     explicit AgaveHandler(QObject *parent);
     ~AgaveHandler();
 
+    virtual QString getUserName();
+
     virtual RemoteDataReply * closeAllConnections();
 
     //Defaults to directory root,
