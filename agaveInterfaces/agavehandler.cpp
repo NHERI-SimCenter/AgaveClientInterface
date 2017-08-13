@@ -74,6 +74,16 @@ AgaveHandler::~AgaveHandler()
     //Note: consider deletion of task guide list
 }
 
+QString AgaveHandler::getUserName()
+{
+    if (authGained)
+    {
+        return authUname;
+    }
+    QString empty;
+    return empty;
+}
+
 bool AgaveHandler::inShutdownMode()
 {
     return performingShutdown;
