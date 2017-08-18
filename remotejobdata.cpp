@@ -65,6 +65,11 @@ QString RemoteJobData::getApp()
     return myApp;
 }
 
+QDateTime RemoteJobData::getTimeCreated()
+{
+    return myCreatedTime;
+}
+
 QString RemoteJobData::getState()
 {
     return myState;
