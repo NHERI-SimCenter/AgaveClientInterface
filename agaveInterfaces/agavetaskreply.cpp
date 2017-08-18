@@ -546,6 +546,8 @@ RemoteJobData AgaveTaskReply::parseJSONjobDetails(QJsonObject rawJobData, bool h
                       rawJobData.value("appId").toString(),
                       parseAgaveTime(rawJobData.value("created").toString()));
 
+    ret.setState(rawJobData.value("status").toString());
+
     if (haveDetails)
     {
         QMap<QString, QVariant> inputMap = rawJobData.value("inputs").toObject().toVariantMap();

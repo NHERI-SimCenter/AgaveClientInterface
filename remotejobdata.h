@@ -53,6 +53,8 @@ public:
     QString getName();
     QString getApp();
 
+    QDateTime getTimeCreated();
+
     QString getState();
     void setState(QString newState);
 
