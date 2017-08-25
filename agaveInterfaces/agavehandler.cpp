@@ -71,7 +71,10 @@ AgaveHandler::~AgaveHandler()
     {
         emit sendFatalErrorMessage("Agave Handler destroyed without proper shutdown");
     }
-    //Note: consider deletion of task guide list
+    foreach (AgaveTaskGuide * aTaskGuide , validTaskList)
+    {
+        delete aTaskGuide;
+    }
 }
 
 QString AgaveHandler::getUserName()
