@@ -40,6 +40,7 @@ RemoteJobData::RemoteJobData()
     myID = "ERROR";
     myName = "ERROR";
     myApp = "ERROR";
+    myState = "APP_INIT";
 }
 
 RemoteJobData::RemoteJobData(QString jobID, QString jobName, QString appName, QDateTime createTime)

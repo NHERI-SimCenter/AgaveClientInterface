@@ -141,6 +141,8 @@ private:
 
     QString getPathReletiveToCWD(QString inputPath);
 
+    QString removeDoubleSlashes(QString stringIn);
+
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;
     const QString tenantURL = "https://agave.designsafe-ci.org";
