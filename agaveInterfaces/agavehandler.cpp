@@ -560,6 +560,7 @@ void AgaveHandler::setupTaskGuideList()
 
     toInsert = new AgaveTaskGuide("fileDownload", AgaveRequestType::AGAVE_DOWNLOAD);
     toInsert->setURLsuffix((QString("/files/v2/media/system/%1/")).arg(storageNode));
+    //toInsert->setURLsuffix(QString("/files/v2/media/"));
     toInsert->setDynamicURLParams("%1",1);
     toInsert->setHeaderType(AuthHeaderType::TOKEN);
     insertAgaveTaskGuide(toInsert);
@@ -1053,7 +1054,7 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
     QNetworkReply * clientReply = NULL;
 
     QString activeURL = tenantURL;
-    activeURL.append(urlAppend);
+    activeURL.append(removeDoubleSlashes(urlAppend));
 
     QNetworkRequest * clientRequest = new QNetworkRequest();
     clientRequest->setUrl(QUrl(activeURL));
@@ -1131,4 +1132,22 @@ QString AgaveHandler::getTenantURL()
 void AgaveHandler::forwardAgaveError(QString errorText)
 {
     emit sendFatalErrorMessage(errorText);
+}
+
+QString AgaveHandler::removeDoubleSlashes(QString stringIn)
+{
+    QString ret;
+
+    for (int i = 0; i < stringIn.size(); i++)
+    {
+        if (stringIn[i] != '/')
+        {
+            ret.append(stringIn[i]);
+        }
+        else if ((i == stringIn.length() - 1) || (stringIn[i + 1] != '/'))
+        {
+            ret.append(stringIn[i]);
+        }
+    }
+    return ret;
 }

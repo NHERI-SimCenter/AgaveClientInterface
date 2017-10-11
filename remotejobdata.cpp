@@ -40,6 +40,7 @@ RemoteJobData::RemoteJobData()
     myID = "ERROR";
     myName = "ERROR";
     myApp = "ERROR";
+    myState = "APP_INIT";
 }
 
 RemoteJobData::RemoteJobData(QString jobID, QString jobName, QString appName, QDateTime createTime)
@@ -80,6 +81,11 @@ void RemoteJobData::setState(QString newState)
     myState = newState;
 }
 
+bool RemoteJobData::detailsLoaded()
+{
+    return haveDatails;
+}
+
 QMap<QString, QString> RemoteJobData::getInputs()
 {
     return inputList;
@@ -92,6 +98,7 @@ QMap<QString, QString> RemoteJobData::getParams()
 
 void RemoteJobData::setDetails(QMap<QString, QString> inputs, QMap<QString, QString> params)
 {
+    haveDatails = true;
     inputList = inputs;
     paramList = params;
 }

@@ -58,6 +58,8 @@ public:
     QString getState();
     void setState(QString newState);
 
+    bool detailsLoaded();
+
     QMap<QString, QString> getInputs();
     QMap<QString, QString> getParams();
     void setDetails(QMap<QString, QString> inputs, QMap<QString, QString> params);
@@ -72,6 +74,8 @@ private:
 
     QMap<QString, QString> inputList;
     QMap<QString, QString> paramList;
+
+    bool haveDatails = false;
 };
 
 #endif // REMOTEJOBDATA_H
