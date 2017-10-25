@@ -294,12 +294,15 @@ RemoteDataReply * AgaveHandler::uploadFile(QString location, QString localFileNa
     return (RemoteDataReply *) theReply;
 }
 
-RemoteDataReply * AgaveHandler::uploadBuffer(QString location, QByteArray fileData)
+RemoteDataReply * AgaveHandler::uploadBuffer(QString location, QByteArray fileData, QString newFileName)
 {
     QString toCheck = getPathReletiveToCWD(location);
     //TODO: check that path and local file exists
+
+    bufferFileName = newFileName;
     AgaveTaskReply * theReply = performAgaveQuery("filePipeUpload", toCheck, fileData);
     theReply->getTaskParamList()->insert("location", toCheck);
+    theReply->getTaskParamList()->insert("newFileName", newFileName);
 
     return (RemoteDataReply *) theReply;
 }
@@ -1030,12 +1033,13 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
     else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD)
     {
         qDebug("Post Data: \n%s", qPrintable(clientPostData));
+        qDebug("New File Name: %s\n", qPrintable(bufferFileName));
         QByteArray * uploadData = new QByteArray(clientPostData);
         //TODO: find a way to clean up the uploadData when no longer needed
         QBuffer * pipedData = new QBuffer(uploadData);
         pipedData->open(QBuffer::ReadOnly);
         qDebug("URL Req: %s", qPrintable(realURLsuffix));
-        QByteArray filePostData = "JSON";
+        QByteArray filePostData = bufferFileName.toUtf8();
 
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
                          authHeader, filePostData, pipedData);
