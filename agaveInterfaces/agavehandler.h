@@ -90,7 +90,7 @@ public:
     virtual RemoteDataReply * mkRemoteDir(QString location, QString newName);
 
     virtual RemoteDataReply * uploadFile(QString location, QString localFileName);
-    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData);
+    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData, QString newFileName);
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
     virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
@@ -163,6 +163,9 @@ private:
     QMap<QString, AgaveTaskGuide*> validTaskList;
 
     QString pwd = "";
+
+    //Note: Below is a horrid kludge. Should find a better way to pass this info TODO
+    QString bufferFileName;
 
     int pendingRequestCount = 0;
     bool performingShutdown = false;

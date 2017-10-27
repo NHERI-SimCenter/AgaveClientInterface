@@ -117,7 +117,7 @@ public:
     virtual RemoteDataReply * mkRemoteDir(QString location, QString newName) = 0;
 
     virtual RemoteDataReply * uploadFile(QString location, QString localFileName) = 0;
-    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData) = 0;
+    virtual RemoteDataReply * uploadBuffer(QString location, QByteArray fileData, QString newFileName) = 0;
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName) = 0;
     virtual RemoteDataReply * downloadBuffer(QString remoteName) = 0;
 
