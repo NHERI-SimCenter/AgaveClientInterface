@@ -356,6 +356,15 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
     QJsonObject rootObject;
     rootObject.insert("appId",QJsonValue(fullAgaveName));
     rootObject.insert("name",QJsonValue(fullAgaveName.append("-run")));
+
+    //Note: This is kudge code for the special case of cse-sim
+    if (jobName == "cwe-sim")
+    {
+        QString simDir = remoteWorkingDir;
+        simDir = simDir.append("/sim");
+        rootObject.insert("archivePath",QJsonValue(simDir));
+    }
+
     QJsonObject inputList;
     QJsonObject paramList;
 
