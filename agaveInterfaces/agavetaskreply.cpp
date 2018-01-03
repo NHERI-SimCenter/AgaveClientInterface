@@ -252,6 +252,18 @@ void AgaveTaskReply::rawTaskComplete()
     if (testReply->error() == 403)
     {
         myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
+        return;
+    }
+
+    if (testReply->error() != QNetworkReply::NoError)
+    {
+        if (testReply->error() == 2)
+        {
+            myManager->forwardAgaveError("DesignSafe Agave Service has dropped connection.");
+            return;
+        }
+
+        qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
     }
 
     //If this task is an INTERNAL task, then the result is redirected to the manager
