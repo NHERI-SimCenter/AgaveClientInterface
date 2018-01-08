@@ -36,6 +36,7 @@
 #include "agavehandler.h"
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
+#include "agavepipebuffer.h"
 
 #include "../filemetadata.h"
 #include "../remotejobdata.h"
@@ -1043,15 +1044,12 @@ QNetworkReply * AgaveHandler::internalQueryMethod(AgaveTaskGuide * taskGuide, QS
     {
         qDebug("Post Data: \n%s", qPrintable(clientPostData));
         qDebug("New File Name: %s\n", qPrintable(bufferFileName));
-        QByteArray * uploadData = new QByteArray(clientPostData);
-        //TODO: find a way to clean up the uploadData when no longer needed
-        QBuffer * pipedData = new QBuffer(uploadData);
+        AgavePipeBuffer * pipedData = new AgavePipeBuffer(&clientPostData);
         pipedData->open(QBuffer::ReadOnly);
         qDebug("URL Req: %s", qPrintable(realURLsuffix));
-        QByteArray filePostData = bufferFileName.toUtf8();
 
         return finalizeAgaveRequest(taskGuide, realURLsuffix,
-                         authHeader, filePostData, pipedData);
+                         authHeader, bufferFileName.toUtf8(), pipedData);
     }
     else
     {
