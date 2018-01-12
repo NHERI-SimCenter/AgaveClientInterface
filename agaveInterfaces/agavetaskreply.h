@@ -38,22 +38,11 @@
 
 #include "../remotedatainterface.h"
 
-#include <QtGlobal>
-#include <QObject>
 #include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QTimer>
-#include <QDateTime>
-#include <QStringList>
-#include <QList>
 
-enum class RequestState;
 class AgaveHandler;
 class AgaveTaskGuide;
-class AgaveLongRunning;
 
 class AgaveTaskReply : public RemoteDataReply
 {
