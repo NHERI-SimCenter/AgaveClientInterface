@@ -34,12 +34,12 @@
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
 #include "agavehandler.h"
+
 #include "agavetaskguide.h"
 #include "agavetaskreply.h"
 #include "agavepipebuffer.h"
 
 #include "../filemetadata.h"
-#include "../remotejobdata.h"
 
 //TODO: need to do more double checking of valid file paths
 

@@ -37,8 +37,6 @@
 #define REMOTEDATAINTERFACE_H
 
 #include <QObject>
-#include <QList>
-#include <QString>
 
 //Good means the request was good and
 //Fail means the remote service replied, but did not like the request, for some reason
