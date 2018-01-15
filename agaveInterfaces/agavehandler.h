@@ -38,26 +38,21 @@
 
 #include "../remotedatainterface.h"
 
-#include <QtGlobal>
-#include <QObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QSslConfiguration>
-#include <QJsonDocument>
-#include <QFile>
-#include <QBuffer>
 #include <QHttpMultiPart>
-#include <QHttpPart>
-#include <QFileInfo>
-#include <QStringList>
-#include <QList>
-#include <QMultiMap>
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
+#include <QFile>
 
 enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_PIPE_DOWNLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
 
 class AgaveTaskGuide;
 class AgaveTaskReply;
-class AgaveLongRunning;
+//class AgaveLongRunning;
 
 class AgaveHandler : public RemoteDataInterface
 {

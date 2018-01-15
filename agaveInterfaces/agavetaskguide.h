@@ -36,17 +36,16 @@
 #ifndef AGAVETASKGUIDE_H
 #define AGAVETASKGUIDE_H
 
-#include <QMap>
+//#include <QMap>
 #include <QString>
 #include <QStringList>
-#include <QList>
+//#include <QList>
 
 enum class AgaveRequestType;
-enum class AgaveState;
 
-//TODO: This whole class, needs more documentation in particular
 enum class AuthHeaderType {NONE, PASSWD, CLIENT, TOKEN, REFRESH};
 
+//TODO: This whole class, needs more documentation in particular
 class AgaveTaskGuide
 {
 public:

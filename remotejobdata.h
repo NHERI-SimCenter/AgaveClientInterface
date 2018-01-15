@@ -37,10 +37,7 @@
 #ifndef REMOTEJOBDATA_H
 #define REMOTEJOBDATA_H
 
-#include <QObject>
-#include <QString>
 #include <QDateTime>
-
 #include <QMap>
 
 class RemoteJobData
