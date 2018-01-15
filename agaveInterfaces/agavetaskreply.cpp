@@ -34,8 +34,9 @@
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
 #include "agavetaskreply.h"
-#include "agavetaskguide.h"
+
 #include "agavehandler.h"
+#include "agavetaskguide.h"
 
 #include "../AgaveClientInterface/filemetadata.h"
 #include "../AgaveClientInterface/remotejobdata.h"

@@ -34,6 +34,7 @@
 // Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
 #include "agavetaskguide.h"
+
 #include "agavehandler.h"
 
 AgaveTaskGuide::AgaveTaskGuide()
