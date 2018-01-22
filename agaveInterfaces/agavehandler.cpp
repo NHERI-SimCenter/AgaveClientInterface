@@ -98,6 +98,7 @@ RemoteDataReply * AgaveHandler::setCurrentRemoteWorkingDirectory(QString cd)
     QString tmp = getPathReletiveToCWD(cd);
 
     AgaveTaskReply * passThru = new AgaveTaskReply(retriveTaskGuide("changeDir"),NULL,this, (QObject *)this);
+    if (passThru == NULL) return NULL;
 
     if (tmp.isEmpty())
     {
@@ -223,6 +224,7 @@ RemoteDataReply * AgaveHandler::remoteLS(QString dirPath)
     }
 
     AgaveTaskReply * theReply = performAgaveQuery("dirListing", tmp);
+    if (theReply == NULL) return NULL;
     theReply->getTaskParamList()->insert("dirPath", tmp);
 
     return (RemoteDataReply *) theReply;
@@ -233,6 +235,8 @@ RemoteDataReply * AgaveHandler::deleteFile(QString toDelete)
     QString toCheck = getPathReletiveToCWD(toDelete);
 
     AgaveTaskReply * theReply = performAgaveQuery("fileDelete", toCheck);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("toDelete", toCheck);
 
     return (RemoteDataReply *) theReply;
@@ -244,6 +248,8 @@ RemoteDataReply * AgaveHandler::moveFile(QString from, QString to)
     QString toCheck = getPathReletiveToCWD(to);
     //TODO: check stuff is valid
     AgaveTaskReply * theReply = performAgaveQuery("fileMove", fromCheck, toCheck);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("from", fromCheck);
     theReply->getTaskParamList()->insert("to", toCheck);
 
@@ -256,6 +262,8 @@ RemoteDataReply * AgaveHandler::copyFile(QString from, QString to)
     QString toCheck = getPathReletiveToCWD(to);
     //TODO: check stuff is valid
     AgaveTaskReply * theReply = performAgaveQuery("fileCopy", fromCheck, toCheck);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("from", fromCheck);
     theReply->getTaskParamList()->insert("to", toCheck);
 
@@ -267,6 +275,8 @@ RemoteDataReply * AgaveHandler::renameFile(QString fullName, QString newName)
     QString toCheck = getPathReletiveToCWD(fullName);
     //TODO: check that path and new name is valid
     AgaveTaskReply * theReply = performAgaveQuery("renameFile", toCheck, newName);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("fullName", toCheck);
     theReply->getTaskParamList()->insert("newName", newName);
 
@@ -278,6 +288,8 @@ RemoteDataReply * AgaveHandler::mkRemoteDir(QString location, QString newName)
     QString toCheck = getPathReletiveToCWD(location);
     //TODO: check that path and new name is valid
     AgaveTaskReply * theReply = performAgaveQuery("newFolder", toCheck, newName);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("location", toCheck);
     theReply->getTaskParamList()->insert("newName", newName);
 
@@ -289,6 +301,8 @@ RemoteDataReply * AgaveHandler::uploadFile(QString location, QString localFileNa
     QString toCheck = getPathReletiveToCWD(location);
     //TODO: check that path and local file exists
     AgaveTaskReply * theReply = performAgaveQuery("fileUpload", toCheck, localFileName);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("location", toCheck);
     theReply->getTaskParamList()->insert("localFileName", localFileName);
 
@@ -302,6 +316,8 @@ RemoteDataReply * AgaveHandler::uploadBuffer(QString location, QByteArray fileDa
 
     bufferFileName = newFileName;
     AgaveTaskReply * theReply = performAgaveQuery("filePipeUpload", toCheck, fileData);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("location", toCheck);
     theReply->getTaskParamList()->insert("newFileName", newFileName);
 
@@ -313,6 +329,8 @@ RemoteDataReply * AgaveHandler::downloadFile(QString localDest, QString remoteNa
     //TODO: check path and local path
     QString toCheck = getPathReletiveToCWD(remoteName);
     AgaveTaskReply * theReply = performAgaveQuery("fileDownload", toCheck, localDest);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("remoteName", toCheck);
     theReply->getTaskParamList()->insert("localDest", localDest);
 
@@ -324,6 +342,8 @@ RemoteDataReply * AgaveHandler::downloadBuffer(QString remoteName)
     //TODO: check path
     QString toCheck = getPathReletiveToCWD(remoteName);
     AgaveTaskReply * theReply = performAgaveQuery("filePipeDownload", toCheck);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("remoteName", toCheck);
 
     return (RemoteDataReply *) theReply;
@@ -421,6 +441,8 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMultiMap<QString,
     qDebug("%s",qPrintable(rawJSONinput.toJson()));
 
     AgaveTaskReply * theReply = performAgaveQuery("agaveAppStart", QString(rawJSONinput.toJson()));
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("jobName", jobName);
     theReply->getTaskParamList()->insert("remoteWorkingDir", remoteWorkingDir);
     *(theReply->getTaskParamList()) += jobParameters;
@@ -436,6 +458,8 @@ RemoteDataReply * AgaveHandler::getListOfJobs()
 RemoteDataReply * AgaveHandler::getJobDetails(QString IDstr)
 {
     AgaveTaskReply * theReply = performAgaveQuery("getJobDetails", IDstr);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("IDstr", IDstr);
 
     return (RemoteDataReply *) theReply;
@@ -444,6 +468,8 @@ RemoteDataReply * AgaveHandler::getJobDetails(QString IDstr)
 RemoteDataReply * AgaveHandler::stopJob(QString IDstr)
 {
     AgaveTaskReply * theReply = performAgaveQuery("stopJob", IDstr);
+    if (theReply == NULL) return NULL;
+
     theReply->getTaskParamList()->insert("IDstr", IDstr);
 
     return (RemoteDataReply *) theReply;
