@@ -47,6 +47,7 @@
 #include <QJsonArray>
 
 #include <QFile>
+#include <QMap>
 
 enum class AgaveRequestType {AGAVE_GET, AGAVE_POST, AGAVE_DELETE, AGAVE_UPLOAD, AGAVE_PIPE_UPLOAD, AGAVE_PIPE_DOWNLOAD, AGAVE_DOWNLOAD, AGAVE_PUT, AGAVE_NONE, AGAVE_APP};
 
@@ -89,7 +90,7 @@ public:
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
     virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir);
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir);
 
     virtual RemoteDataReply * getListOfJobs();
     virtual RemoteDataReply * getJobDetails(QString IDstr);
@@ -119,11 +120,10 @@ private slots:
     void finishedOneTask(QNetworkReply *reply);
 
 private:
-    AgaveTaskReply * performAgaveQuery(QString queryName, QObject * parentReq = NULL);
-    AgaveTaskReply * performAgaveQuery(QString queryName, QString param1, QObject * parentReq = NULL);
-    AgaveTaskReply * performAgaveQuery(QString queryName, QString param1, QString param2, QObject * parentReq = NULL);
-    AgaveTaskReply * performAgaveQuery(QString queryName, QStringList * paramList0 = NULL, QStringList * paramList1 = NULL, QObject * parentReq = NULL);
-    QNetworkReply * internalQueryMethod(AgaveTaskGuide * theGuide, QStringList * paramList1 = NULL, QStringList * paramList2 = NULL);
+    AgaveTaskReply * performAgaveQuery(QString queryName);
+    AgaveTaskReply * performAgaveQuery(QString queryName, QMap<QString, QByteArray> varList, QObject *parentReq = NULL);
+
+    QNetworkReply * distillRequestData(AgaveTaskGuide * theGuide, QMap<QString, QByteArray> * varList);
     QNetworkReply * finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader = NULL, QByteArray postData = "", QIODevice * fileHandle = NULL);
 
     void forwardReplyToParent(AgaveTaskReply * agaveReply, RequestState replyState, QString * param1 = NULL);
@@ -158,9 +158,6 @@ private:
     QMap<QString, AgaveTaskGuide*> validTaskList;
 
     QString pwd = "";
-
-    //Note: Below is a horrid kludge. Should find a better way to pass this info TODO
-    QString bufferFileName;
 
     int pendingRequestCount = 0;
     bool performingShutdown = false;

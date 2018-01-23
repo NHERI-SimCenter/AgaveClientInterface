@@ -69,8 +69,6 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
     {
         QObject::connect(myReplyObject, SIGNAL(finished()), this, SLOT(rawTaskComplete()));
     }
-
-    taskParamList = new QMultiMap<QString, QString>();
 }
 
 AgaveTaskReply::~AgaveTaskReply()
@@ -79,15 +77,11 @@ AgaveTaskReply::~AgaveTaskReply()
     {
         myReplyObject->deleteLater();
     }
-    if (taskParamList != NULL)
-    {
-        delete taskParamList;
-    }
 }
 
-QMultiMap<QString, QString> * AgaveTaskReply::getTaskParamList()
+QMap<QString, QByteArray> * AgaveTaskReply::getTaskParamList()
 {
-    return taskParamList;
+    return &taskParamList;
 }
 
 void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * param1)
@@ -279,7 +273,7 @@ void AgaveTaskReply::rawTaskComplete()
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
     {
         //TODO: consider a better way of doing this for larger files
-        QFile * fileHandle = new QFile(taskParamList->value("localDest"));
+        QFile * fileHandle = new QFile(taskParamList.value("localDest"));
         if (!fileHandle->open(QIODevice::WriteOnly))
         {
             processFailureReply("Could not open local file for writing");
