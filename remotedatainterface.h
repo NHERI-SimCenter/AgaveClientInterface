@@ -54,9 +54,9 @@ class RemoteDataReply : public QObject
 public:
     RemoteDataReply(QObject * parent);
 
-    //If one needs to know the parameters passed to the initial task,
+    //If one needs to know the parameters or data passed to the initial task,
     //find them returned here:
-    virtual QMultiMap<QString, QString> * getTaskParamList() = 0;
+    virtual QMap<QString, QByteArray> * getTaskParamList() = 0;
     //The object returned here is destroyed with the RemoteDataReply
 
 signals:
@@ -119,7 +119,7 @@ public:
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName) = 0;
     virtual RemoteDataReply * downloadBuffer(QString remoteName) = 0;
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QMultiMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
 
     virtual RemoteDataReply * getListOfJobs() = 0;
     virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;

@@ -51,12 +51,10 @@ public:
     explicit AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply *newReply, AgaveHandler * theManager, QObject *parent = 0);
     ~AgaveTaskReply();
 
-    virtual QMultiMap<QString, QString> * getTaskParamList();
+    virtual QMap<QString, QByteArray> *getTaskParamList();
 
     //-------------------------------------------------
     //Agave specific:
-
-    void invokePassThruReply();
     void delayedPassThruReply(RequestState replyState, QString * param1 = NULL);
 
     AgaveTaskGuide * getTaskGuide();
@@ -83,6 +81,8 @@ private slots:
     void rawTaskComplete();
 
 private:
+    void invokePassThruReply();
+
     void processNoContactReply(QString errorText);
     void processFailureReply(QString errorText);
 
@@ -97,7 +97,7 @@ private:
     RequestState pendingReply;
     QString pendingParam;
 
-    QMultiMap<QString, QString> * taskParamList = NULL;
+    QMap<QString, QByteArray> taskParamList;
 };
 
 #endif // AGAVETASKREPLY_H

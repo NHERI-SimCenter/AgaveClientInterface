@@ -46,18 +46,6 @@ AgaveTaskGuide::AgaveTaskGuide(QString newID, AgaveRequestType reqType)
 {
     taskId = newID;
     requestType = reqType;
-
-    if ((requestType == AgaveRequestType::AGAVE_UPLOAD) || (requestType == AgaveRequestType::AGAVE_DOWNLOAD))
-    {
-        //Agave Upload takes one param: the full file name
-        //Agave Download takes one param: the local destination name
-        setPostParams("%1", 1);
-    }
-    else if (requestType == AgaveRequestType::AGAVE_PIPE_UPLOAD)
-    {
-        //Agave pipe upload takes one param, the full data to be piped
-        setPostParams("%1", 1);
-    }
 }
 
 QString AgaveTaskGuide::getTaskID()
@@ -65,9 +53,16 @@ QString AgaveTaskGuide::getTaskID()
     return taskId;
 }
 
-QString AgaveTaskGuide::getURLsuffix()
+QByteArray AgaveTaskGuide::getURLsuffix()
 {
-    return URLsuffix;
+    return URLsuffix.toLatin1();
+}
+
+QByteArray AgaveTaskGuide::getArgAndURLsuffix(QMap<QString, QByteArray> * varList)
+{
+    QByteArray ret = getURLsuffix();
+    ret.append(fillURLArgList(varList));
+    return ret;
 }
 
 AgaveRequestType AgaveTaskGuide::getRequestType()
@@ -95,28 +90,39 @@ bool AgaveTaskGuide::isInternal()
     return internalTask;
 }
 
-QByteArray AgaveTaskGuide::fillPostArgList(QStringList * argList)
+QByteArray AgaveTaskGuide::fillPostArgList(QMap<QString, QByteArray> *argList)
 {
-    return fillAnyArgList(argList, numPostVals, postFormat);
+    return fillAnyArgList(argList, &postVarNames, &postFormat);
 }
 
-QByteArray AgaveTaskGuide::fillURLArgList(QStringList * argList)
+QByteArray AgaveTaskGuide::fillURLArgList(QMap<QString, QByteArray> *argList)
 {
-    return fillAnyArgList(argList, numDynURLVals, dynURLFormat);
+    return fillAnyArgList(argList, &urlVarNames, &dynURLFormat);
 }
 
-QByteArray AgaveTaskGuide::fillAnyArgList(QStringList * argList, int numVals, QString strFormat)
+QByteArray AgaveTaskGuide::fillAnyArgList(QMap<QString, QByteArray> * argList, QList<QString> * subNames, QString * strFormat)
 {
-    if ((argList == NULL) || (numVals != argList->size()) || (numVals == 0))
+    QByteArray empty;
+    if (strFormat == NULL)
     {
-        return strFormat.toLatin1();
+        return empty;
     }
 
-    QString ret = strFormat;
-
-    for (auto itr = argList->cbegin(); itr != argList->cend(); ++itr)
+    if ((argList == NULL) || (subNames == NULL) || (subNames->empty()))
     {
-        ret = ret.arg(*itr);
+        return strFormat->toLatin1();
+    }
+
+    QString ret = *strFormat;
+
+    for (auto itr = subNames->cbegin(); itr != subNames->cend(); ++itr)
+    {
+        if (!argList->contains(*itr))
+        {
+            return empty;
+        }
+
+        ret = ret.arg(QString::fromLatin1(argList->value(*itr)));
     }
     return ret.toLatin1();
 }
@@ -136,28 +142,38 @@ void AgaveTaskGuide::setTokenFormat(bool newSetting)
     usesTokenFormat = newSetting;
 }
 
-void AgaveTaskGuide::setDynamicURLParams(QString format, int numSubs)
+void AgaveTaskGuide::setDynamicURLParams(QString format)
 {
-    needsURLParams = true;
-    dynURLFormat = format;
-    numDynURLVals = numSubs;
+    QList<QString> empty;
+    setDynamicURLParams(format, empty);
 }
 
-void AgaveTaskGuide::setPostParams(QString format, int numSubs)
+void AgaveTaskGuide::setDynamicURLParams(QString format, QList<QString> subNames)
 {
-    needsPostParams = true;
+    dynURLFormat = format;
+    urlVarNames = subNames;
+}
+
+void AgaveTaskGuide::setPostParams(QString format)
+{
+    QList<QString> empty;
+    setPostParams(format, empty);
+}
+
+void AgaveTaskGuide::setPostParams(QString format, QList<QString> subNames)
+{
     postFormat = format;
-    numPostVals = numSubs;
+    postVarNames = subNames;
 }
 
 bool AgaveTaskGuide::usesPostParms()
 {
-    return needsPostParams;
+    return !postFormat.isEmpty();
 }
 
 bool AgaveTaskGuide::usesURLParams()
 {
-    return needsURLParams;
+    return !dynURLFormat.isEmpty();
 }
 
 void AgaveTaskGuide::setAgaveFullName(QString newFullName)

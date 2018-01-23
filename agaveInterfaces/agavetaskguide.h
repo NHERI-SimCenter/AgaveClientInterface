@@ -56,8 +56,10 @@ public:
     void setHeaderType(AuthHeaderType newValue);
 
     void setTokenFormat(bool newSetting);
-    void setDynamicURLParams(QString format, int numSubs);
-    void setPostParams(QString format, int numSubs);
+    void setDynamicURLParams(QString format);
+    void setDynamicURLParams(QString format, QList<QString> subNames);
+    void setPostParams(QString format);
+    void setPostParams(QString format, QList<QString> subNames);
     void setAsInternal();
 
     void setAgaveFullName(QString newFullName);
@@ -66,11 +68,12 @@ public:
     void setAgaveInputList(QStringList newInputList);
 
     QString getTaskID();
-    QString getURLsuffix();
+    QByteArray getURLsuffix();
+    QByteArray getArgAndURLsuffix(QMap<QString, QByteArray> * varList = NULL);
     AgaveRequestType getRequestType();
     AuthHeaderType getHeaderType();
-    QByteArray fillPostArgList(QStringList * argList = NULL);
-    QByteArray fillURLArgList(QStringList * argList = NULL);
+    QByteArray fillPostArgList(QMap<QString, QByteArray> * argList = NULL);
+    QByteArray fillURLArgList(QMap<QString, QByteArray> * argList = NULL);
     bool isTokenFormat();
     bool isInternal();
 
@@ -89,18 +92,15 @@ private:
     AgaveRequestType requestType;
     AuthHeaderType headerType = AuthHeaderType::NONE;
 
-    QByteArray fillAnyArgList(QStringList *argList, int numVals, QString strFormat);
+    QByteArray fillAnyArgList(QMap<QString, QByteArray> * argList, QList<QString> * subNames, QString * strFormat);
 
     bool internalTask = false;
     bool usesTokenFormat = false;
-    bool needsPostParams = false;
-    bool needsURLParams = false;
 
     QString postFormat = "";
-    int numPostVals = 0;
-
     QString dynURLFormat = "";
-    int numDynURLVals = 0;
+    QList<QString> postVarNames;
+    QList<QString> urlVarNames;
 
     QString agaveFullName;
     QString agavePWDparam;
