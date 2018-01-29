@@ -434,6 +434,7 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QStr
     rawJSONinput.setObject(rootObject);
 
     taskVars.insert("rawJSONinput", rawJSONinput.toJson());
+    taskVars.insert("fileData", rawJSONinput.toJson());
 
     qDebug("%s",qPrintable(rawJSONinput.toJson()));
 
