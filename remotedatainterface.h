@@ -119,7 +119,7 @@ public:
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName) = 0;
     virtual RemoteDataReply * downloadBuffer(QString remoteName) = 0;
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir) = 0;
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName = "") = 0;
 
     virtual RemoteDataReply * getListOfJobs() = 0;
     virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;

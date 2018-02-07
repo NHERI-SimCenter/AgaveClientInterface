@@ -354,7 +354,7 @@ AgaveTaskReply *AgaveHandler::getAgaveAppList()
     return performAgaveQuery("getAgaveList");
 }
 
-RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir)
+RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName)
 {
     //This function is only for Agave Jobs
     AgaveTaskGuide * guideToCheck = retriveTaskGuide(jobName);
@@ -378,7 +378,15 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QStr
     QJsonDocument rawJSONinput;
     QJsonObject rootObject;
     rootObject.insert("appId",QJsonValue(fullAgaveName));
-    rootObject.insert("name",QJsonValue(fullAgaveName.append("-run")));
+    if (indivJobName.isEmpty())
+    {
+        rootObject.insert("name",QJsonValue(fullAgaveName.append("-run")));
+    }
+    else
+    {
+        rootObject.insert("name",QJsonValue(indivJobName));
+    }
+
 
     if (jobName.startsWith("cwe-"))
     {
@@ -899,7 +907,6 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName)
 
 AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QMap<QString, QByteArray> varList, QObject * parentReq)
 {
-    //TODO
     //The network availabilty flag seems innacurate cross-platform
     //Failed task invocations return NULL from this function.
     /*
