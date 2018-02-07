@@ -90,7 +90,7 @@ public:
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
     virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir);
+    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName = "");
 
     virtual RemoteDataReply * getListOfJobs();
     virtual RemoteDataReply * getJobDetails(QString IDstr);
@@ -136,7 +136,7 @@ private:
 
     QString getPathReletiveToCWD(QString inputPath);
 
-    QString removeDoubleSlashes(QString stringIn);
+    static QString removeDoubleSlashes(QString stringIn);
 
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;
