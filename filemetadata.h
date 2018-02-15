@@ -39,7 +39,7 @@
 #include <QStringList>
 #include <QString>
 
-enum class FileType {FILE, DIR, SIM_LINK, EMPTY_FOLDER, INVALID, UNLOADED}; //Add more as needed
+enum class FileType {FILE, DIR, SIM_LINK, INVALID}; //Add more as needed
 
 class FileMetaData
 {
