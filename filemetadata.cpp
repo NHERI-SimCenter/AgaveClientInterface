@@ -128,11 +128,9 @@ QString FileMetaData::getFileTypeString() const
     switch (myType)
     {
     case FileType::DIR : return "Folder";
-    case FileType::EMPTY_FOLDER : return "Empty";
     case FileType::FILE : return "File";
     case FileType::INVALID : return "Error";
     case FileType::SIM_LINK : return "Link";
-    case FileType::UNLOADED : return "Fetching";
     }
     return "ERROR";
 }
