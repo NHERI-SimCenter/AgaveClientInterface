@@ -249,6 +249,21 @@ void AgaveTaskReply::rawTaskComplete()
         myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
         return;
     }
+    else if (testReply->error() == 203)
+    {
+        qDebug("File Not found.");
+        if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
+        {
+            emit haveDownloadReply(RequestState::FAIL);
+            return;
+        }
+        if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
+        {
+            emit haveBufferDownloadReply(RequestState::FAIL, NULL);
+            return;
+        }
+        return;
+    }
 
     if (testReply->error() != QNetworkReply::NoError)
     {
