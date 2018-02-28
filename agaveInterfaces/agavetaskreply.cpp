@@ -264,6 +264,11 @@ void AgaveTaskReply::rawTaskComplete()
         }
         return;
     }
+    else if (testReply->error() == 3)
+    {
+        myManager->forwardAgaveError("Lost Internet connection. Please check connection and restart program.");
+        return;
+    }
 
     if (testReply->error() != QNetworkReply::NoError)
     {
