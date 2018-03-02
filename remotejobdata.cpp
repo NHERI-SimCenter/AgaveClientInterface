@@ -51,17 +51,17 @@ RemoteJobData::RemoteJobData(QString jobID, QString jobName, QString appName, QD
     myCreatedTime = createTime;
 }
 
-QString RemoteJobData::getID()
+QString RemoteJobData::getID() const
 {
     return myID;
 }
 
-QString RemoteJobData::getName()
+QString RemoteJobData::getName() const
 {
     return myName;
 }
 
-QString RemoteJobData::getApp()
+QString RemoteJobData::getApp() const
 {
     return myApp;
 }
@@ -71,7 +71,7 @@ QDateTime RemoteJobData::getTimeCreated()
     return myCreatedTime;
 }
 
-QString RemoteJobData::getState()
+QString RemoteJobData::getState() const
 {
     return myState;
 }
@@ -81,17 +81,17 @@ void RemoteJobData::setState(QString newState)
     myState = newState;
 }
 
-bool RemoteJobData::detailsLoaded()
+bool RemoteJobData::detailsLoaded() const
 {
     return haveDatails;
 }
 
-QMap<QString, QString> RemoteJobData::getInputs()
+QMap<QString, QString> RemoteJobData::getInputs() const
 {
     return inputList;
 }
 
-QMap<QString, QString> RemoteJobData::getParams()
+QMap<QString, QString> RemoteJobData::getParams() const
 {
     return paramList;
 }
