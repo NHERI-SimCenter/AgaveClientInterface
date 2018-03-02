@@ -46,19 +46,19 @@ public:
     RemoteJobData();
     RemoteJobData(QString jobID, QString jobName, QString appName, QDateTime createTime);
 
-    QString getID();
-    QString getName();
-    QString getApp();
+    QString getID() const;
+    QString getName() const;
+    QString getApp() const;
 
     QDateTime getTimeCreated();
 
-    QString getState();
+    QString getState() const;
     void setState(QString newState);
 
-    bool detailsLoaded();
+    bool detailsLoaded() const;
 
-    QMap<QString, QString> getInputs();
-    QMap<QString, QString> getParams();
+    QMap<QString, QString> getInputs() const;
+    QMap<QString, QString> getParams() const;
     void setDetails(QMap<QString, QString> inputs, QMap<QString, QString> params);
 
 private:
