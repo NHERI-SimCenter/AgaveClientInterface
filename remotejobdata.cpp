@@ -81,6 +81,19 @@ void RemoteJobData::setState(QString newState)
     myState = newState;
 }
 
+void RemoteJobData::updateData(RemoteJobData newData)
+{
+    myID = newData.myID;
+    myName = newData.myName;
+    myState = newData.myState;
+    myApp = newData.myApp;
+    myCreatedTime = newData.myCreatedTime;
+    if (newData.detailsLoaded())
+    {
+        setDetails(newData.inputList, newData.paramList);
+    }
+}
+
 bool RemoteJobData::detailsLoaded() const
 {
     return haveDatails;

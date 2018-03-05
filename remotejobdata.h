@@ -54,6 +54,7 @@ public:
 
     QString getState() const;
     void setState(QString newState);
+    void updateData(RemoteJobData newData);
 
     bool detailsLoaded() const;
 
