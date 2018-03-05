@@ -747,7 +747,10 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
         return;
     }
 
-    qDebug("%s",qPrintable(parseHandler.toJson()));
+    if (rawOutputDebugEnabled())
+    {
+        qDebug("%s",qPrintable(parseHandler.toJson()));
+    }
 
     RequestState prelimResult = AgaveTaskReply::standardSuccessFailCheck(agaveReply->getTaskGuide(), &parseHandler);
 
