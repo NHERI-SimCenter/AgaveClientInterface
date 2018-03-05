@@ -37,4 +37,14 @@
 
 RemoteDataInterface::RemoteDataInterface(QObject * parent):QObject(parent) {}
 
+bool RemoteDataInterface::rawOutputDebugEnabled()
+{
+    return showRawOutputInDebug;
+}
+
+void RemoteDataInterface::setRawDebugOutput(bool newSetting)
+{
+    showRawOutputInDebug = newSetting;
+}
+
 RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}

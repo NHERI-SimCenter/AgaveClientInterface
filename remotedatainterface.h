@@ -125,8 +125,14 @@ public:
     virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;
     virtual RemoteDataReply * stopJob(QString IDstr) = 0;
 
+    bool rawOutputDebugEnabled();
+    void setRawDebugOutput(bool newSetting);
+
 signals:
     void sendFatalErrorMessage(QString errorText);
+
+private:
+    bool showRawOutputInDebug = false;
 };
 
 #endif // REMOTEDATAINTERFACE_H

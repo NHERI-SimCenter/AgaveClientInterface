@@ -244,35 +244,34 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }    
 
-    if (testReply->error() == 403)
-    {
-        myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
-        return;
-    }
-    else if (testReply->error() == 203)
-    {
-        qDebug("File Not found.");
-        if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
-        {
-            emit haveDownloadReply(RequestState::FAIL);
-            return;
-        }
-        if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
-        {
-            emit haveBufferDownloadReply(RequestState::FAIL, NULL);
-            return;
-        }
-        return;
-    }
-    else if (testReply->error() == 3)
-    {
-        myManager->forwardAgaveError("Lost Internet connection. Please check connection and restart program.");
-        return;
-    }
-
     if (testReply->error() != QNetworkReply::NoError)
     {
-        if (testReply->error() == 2)
+        if (testReply->error() == 403)
+        {
+            myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
+            return;
+        }
+        else if (testReply->error() == 203)
+        {
+            qDebug("File Not found.");
+            if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
+            {
+                emit haveDownloadReply(RequestState::FAIL);
+                return;
+            }
+            if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
+            {
+                emit haveBufferDownloadReply(RequestState::FAIL, NULL);
+                return;
+            }
+            return;
+        }
+        else if (testReply->error() == 3)
+        {
+            myManager->forwardAgaveError("Lost Internet connection. Please check connection and restart program.");
+            return;
+        }
+        else if (testReply->error() == 2)
         {
             myManager->forwardAgaveError("DesignSafe Agave Service has dropped connection.");
             return;
@@ -335,7 +334,10 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }
 
-    qDebug("%s", qPrintable(parseHandler.toJson()));
+    if (myManager->rawOutputDebugEnabled())
+    {
+        qDebug("%s", qPrintable(parseHandler.toJson()));
+    }
 
     RequestState prelimResult = standardSuccessFailCheck(myGuide, &parseHandler);
 
