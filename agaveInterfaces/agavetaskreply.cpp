@@ -684,7 +684,14 @@ QMap<QString, QString> AgaveTaskReply::convertVarMapToString(QMap<QString, QVari
     QMap<QString, QString> ret;
     for (auto itr = inMap.cbegin(); itr != inMap.cend(); itr++)
     {
-        ret.insert(itr.key(), itr.value().toString());
+        if (QString(itr.value().typeName()) == "QString")
+        {
+            ret.insert(itr.key(), itr.value().toString());
+        }
+        else if (QString(itr.value().typeName()) == "QVariantList")
+        {
+            ret.insert(itr.key(), itr.value().toStringList().at(0));
+        }
     }
     return ret;
 }

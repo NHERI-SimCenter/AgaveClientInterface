@@ -44,10 +44,6 @@ bool FileMetaData::operator==(const FileMetaData & toCompare)
 {
     if (this->getFileName() != toCompare.getFileName()) return false;
     if (this->getFileType() != toCompare.getFileType()) return false;
-    if (this->getFileType() == FileType::FILE)
-    {
-        if (this->getSize() != toCompare.getSize()) return false;
-    }
 
     return true;
 }
