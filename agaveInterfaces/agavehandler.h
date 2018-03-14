@@ -141,7 +141,7 @@ private:
     QNetworkAccessManager networkHandle;
     QSslConfiguration SSLoptions;
     const QString tenantURL = "https://agave.designsafe-ci.org";
-    const QString clientName = "SimCenterCWE_GUI";
+    const QString clientName = "SimCenter_CWE_GUI";
     const QString storageNode = "designsafe.storage.default";
 
     QByteArray authEncloded;
