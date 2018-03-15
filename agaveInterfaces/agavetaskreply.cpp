@@ -276,8 +276,15 @@ void AgaveTaskReply::rawTaskComplete()
             myManager->forwardAgaveError("DesignSafe Agave Service has dropped connection.");
             return;
         }
+        else if (testReply->error() == 302)
+        {
+            qDebug("Agave bad request");
+        }
+        else
+        {
+            qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
+        }
 
-        qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
     }
 
     //If this task is an INTERNAL task, then the result is redirected to the manager
