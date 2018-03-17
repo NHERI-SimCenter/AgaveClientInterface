@@ -68,7 +68,7 @@ void AgaveHandler::finishedOneTask(QNetworkReply *)
 
 AgaveHandler::~AgaveHandler()
 {
-    if ((performingShutdown == true) || (authGained == true))
+    if ((performingShutdown == false) || (authGained == true))
     {
         emit sendFatalErrorMessage("Agave Handler destroyed without proper shutdown");
     }
