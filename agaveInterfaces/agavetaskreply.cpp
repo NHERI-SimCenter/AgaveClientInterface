@@ -237,7 +237,7 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }
 
-    QNetworkReply * testReply = (QNetworkReply*)QObject::sender();
+    QNetworkReply * testReply = qobject_cast<QNetworkReply *>(sender());
     if (testReply != myReplyObject)
     {
         myManager->forwardAgaveError("Network reply does not match agave reply");
@@ -319,8 +319,15 @@ void AgaveTaskReply::rawTaskComplete()
     else if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
     {
         //TODO: consider a better way of doing this for larger files
+        if ((int)myReplyObject->error() == 0)
+        {
+            emit haveBufferDownloadReply(RequestState::GOOD, &replyText);
+        }
+        else
+        {
+            processNoContactReply(myReplyObject->errorString());
+        }
 
-        emit haveBufferDownloadReply(RequestState::GOOD, &replyText);
         return;
     }
 
@@ -329,14 +336,13 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (parseHandler.isNull())
     {
-        if ((int)myReplyObject->error() != 0)
+        if ((int)myReplyObject->error() == 0)
         {
-            qDebug("%d", (int)myReplyObject->error());
-            processFailureReply(myReplyObject->errorString());
+            processFailureReply("JSON parse failed");
         }
         else
         {
-            processNoContactReply("JSON parse failed");
+            processNoContactReply(myReplyObject->errorString());
         }
         return;
     }
