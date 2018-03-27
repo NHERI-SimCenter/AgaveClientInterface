@@ -39,13 +39,15 @@
 #include <QStringList>
 #include <QString>
 
-enum class FileType {FILE, DIR, SIM_LINK, INVALID}; //Add more as needed
+enum class FileType {FILE, DIR, SIM_LINK, INVALID, NIL}; //Add more as needed
 
 class FileMetaData
 {
 public:
     FileMetaData();
-    bool operator==(const FileMetaData & toCompare);
+    FileMetaData& operator=(const FileMetaData &toCopy);
+
+    void copyDataFrom(const FileMetaData &toCopy);
 
     void setFullFilePath(QString fullPath);
     void setSize(int newSize);
@@ -58,6 +60,8 @@ public:
     FileType getFileType() const;
     QString getFileTypeString() const;
 
+    bool isNil() const;
+
     static QStringList getPathNameList(QString fullPath);
     static QString cleanPathSlashes(QString fullPath);
 
@@ -66,7 +70,7 @@ private:
     QString fullContainingPath; //ie. full path without this files own name
     QString fileName;
     int fileSize = 0; //in bytes?
-    FileType myType = FileType::INVALID;
+    FileType myType = FileType::NIL;
 };
 
 #endif // FILEMETADATA_H
