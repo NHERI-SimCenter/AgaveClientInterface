@@ -40,12 +40,18 @@ FileMetaData::FileMetaData()
     //Note: defaults are handled in the class header
 }
 
-bool FileMetaData::operator==(const FileMetaData & toCompare)
+FileMetaData& FileMetaData::operator=(const FileMetaData &toCopy)
 {
-    if (this->getFileName() != toCompare.getFileName()) return false;
-    if (this->getFileType() != toCompare.getFileType()) return false;
+    copyDataFrom(toCopy);
+    return *this;
+}
 
-    return true;
+void FileMetaData::copyDataFrom(const FileMetaData &toCopy)
+{
+    fullContainingPath = toCopy.fullContainingPath;
+    fileName = toCopy.fileName;
+    fileSize = toCopy.fileSize;
+    myType = toCopy.myType;
 }
 
 void FileMetaData::setFullFilePath(QString fullPath)
@@ -131,8 +137,14 @@ QString FileMetaData::getFileTypeString() const
     case FileType::FILE : return "File";
     case FileType::INVALID : return "Error";
     case FileType::SIM_LINK : return "Link";
+    case FileType::NIL : return "Nil";
     }
     return "ERROR";
+}
+
+bool FileMetaData::isNil() const
+{
+    return (myType == FileType::NIL);
 }
 
 QStringList FileMetaData::getPathNameList(QString fullPath)
