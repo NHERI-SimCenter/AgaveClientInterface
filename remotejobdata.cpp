@@ -66,7 +66,7 @@ QString RemoteJobData::getApp() const
     return myApp;
 }
 
-QDateTime RemoteJobData::getTimeCreated()
+QDateTime RemoteJobData::getTimeCreated() const
 {
     return myCreatedTime;
 }

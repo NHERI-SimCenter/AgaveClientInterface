@@ -50,7 +50,7 @@ public:
     QString getName() const;
     QString getApp() const;
 
-    QDateTime getTimeCreated();
+    QDateTime getTimeCreated() const;
 
     QString getState() const;
     void setState(QString newState);
