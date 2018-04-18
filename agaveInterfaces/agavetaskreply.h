@@ -40,6 +40,7 @@
 
 #include <QNetworkAccessManager>
 #include <QTimer>
+#include <QMetaMethod>
 
 class AgaveHandler;
 class AgaveTaskGuide;
@@ -73,14 +74,20 @@ public:
     static QMap<QString, QString> convertVarMapToString(QMap<QString, QVariant> inMap);
 
 signals:
-    //For redirecting info to the Agave handler:
+    //For redirecting info to the Agave handler, do not use otherwise:
     void haveInternalTaskReply(AgaveTaskReply * theGuide, QNetworkReply * rawReply);
-    void haveAgaveAppList(RequestState theGuide, QJsonArray * appsList);
+
+    //TODO: Concerned that this might hide that passing of an implictly shared object
+    //Double-check that the data is all passed.
+    void haveAgaveAppList(RequestState theGuide, QVariantList appsList);
 
 private slots:
     void rawTaskComplete();
 
 private:
+    void signalConnectDelay();
+    bool anySignalConnect();
+
     void invokePassThruReply();
 
     void processNoContactReply(QString errorText);

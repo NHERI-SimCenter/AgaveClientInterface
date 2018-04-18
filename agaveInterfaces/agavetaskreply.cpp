@@ -117,7 +117,7 @@ void AgaveTaskReply::invokePassThruReply()
     }
     if (myGuide->getTaskID() == "changeDir")
     {
-        emit haveCurrentRemoteDir(pendingReply, &pendingParam);
+        emit haveCurrentRemoteDir(pendingReply, pendingParam);
         return;
     }
     if (myGuide->getTaskID() == "fullAuth")
@@ -165,11 +165,11 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "dirListing")
     {
-        emit haveLSReply(replyState, NULL);
+        emit haveLSReply(replyState, QList<FileMetaData>());
     }
     else if ((myGuide->getTaskID() == "fileUpload") || (myGuide->getTaskID() == "filePipeUpload"))
     {
-        emit haveUploadReply(replyState, NULL);
+        emit haveUploadReply(replyState, FileMetaData());
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
@@ -177,19 +177,19 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "newFolder")
     {
-        emit haveMkdirReply(replyState, NULL);
+        emit haveMkdirReply(replyState, FileMetaData());
     }
     else if (myGuide->getTaskID() == "renameFile")
     {
-        emit haveRenameReply(replyState, NULL);
+        emit haveRenameReply(replyState, FileMetaData());
     }
     else if (myGuide->getTaskID() == "fileMove")
     {
-        emit haveMoveReply(replyState, NULL);
+        emit haveMoveReply(replyState, FileMetaData());
     }
     else if (myGuide->getTaskID() == "fileCopy")
     {
-        emit haveCopyReply(replyState,NULL);
+        emit haveCopyReply(replyState,FileMetaData());
     }
     else if (myGuide->getTaskID() == "fileDownload")
     {
@@ -201,11 +201,11 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "getJobList")
     {
-        emit haveJobList(replyState, NULL);
+        emit haveJobList(replyState, QList<RemoteJobData>());
     }
     else if (myGuide->getTaskID() == "getJobDetails")
     {
-        emit haveJobDetails(replyState, NULL);
+        emit haveJobDetails(replyState, RemoteJobData());
     }
     else if (myGuide->getTaskID() == "stopJob")
     {
@@ -213,17 +213,19 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "haveAgaveAppList")
     {
-        emit haveAgaveAppList(replyState, NULL);
+        emit haveAgaveAppList(replyState, QVariantList());
     }
     else
     {
-        emit haveJobReply(replyState, NULL);
+        emit haveJobReply(replyState, QJsonDocument());
     }
 }
 
 void AgaveTaskReply::rawTaskComplete()
 {
     this->deleteLater();
+
+    signalConnectDelay();
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
     {
@@ -321,7 +323,7 @@ void AgaveTaskReply::rawTaskComplete()
         //TODO: consider a better way of doing this for larger files
         if ((int)myReplyObject->error() == 0)
         {
-            emit haveBufferDownloadReply(RequestState::GOOD, &replyText);
+            emit haveBufferDownloadReply(RequestState::GOOD, replyText);
         }
         else
         {
@@ -387,7 +389,7 @@ void AgaveTaskReply::rawTaskComplete()
             }
             fileList.append(aFile);
         }
-        emit haveLSReply(RequestState::GOOD, &fileList);
+        emit haveLSReply(RequestState::GOOD, fileList);
     }
     else if ((myGuide->getTaskID() == "fileUpload") || (myGuide->getTaskID() == "filePipeUpload"))
     {
@@ -398,7 +400,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveUploadReply(RequestState::GOOD, &aFile);
+        emit haveUploadReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
@@ -413,7 +415,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveMkdirReply(RequestState::GOOD, &aFile);
+        emit haveMkdirReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "renameFile")
     {
@@ -424,7 +426,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveRenameReply(RequestState::GOOD, &aFile);
+        emit haveRenameReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "fileCopy")
     {
@@ -435,7 +437,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveCopyReply(RequestState::GOOD, &aFile);
+        emit haveCopyReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "fileMove")
     {
@@ -446,14 +448,14 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid file data");
             return;
         }
-        emit haveMoveReply(RequestState::GOOD, &aFile);
+        emit haveMoveReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "getJobList")
     {
         QJsonValue expectedObject = retriveMainAgaveJSON(&parseHandler,"result");
         QList<RemoteJobData> jobList = parseJSONjobMetaData(expectedObject.toArray());
 
-        emit haveJobList(RequestState::GOOD, &jobList);
+        emit haveJobList(RequestState::GOOD, jobList);
     }
     else if (myGuide->getTaskID() == "getJobDetails")
     {
@@ -464,7 +466,7 @@ void AgaveTaskReply::rawTaskComplete()
             processFailureReply("Invalid job data");
             return;
         }
-        emit haveJobDetails(RequestState::GOOD, &jobData);
+        emit haveJobDetails(RequestState::GOOD, jobData);
     }
     else if (myGuide->getTaskID() == "stopJob")
     {
@@ -475,11 +477,11 @@ void AgaveTaskReply::rawTaskComplete()
         //TODO More error checking here
         QJsonValue expectedArray = retriveMainAgaveJSON(&parseHandler,"result");
         QJsonArray appList = expectedArray.toArray();
-        emit haveAgaveAppList(RequestState::GOOD, &appList);
+        emit haveAgaveAppList(RequestState::GOOD, appList.toVariantList());
     }
     else
     {
-        emit haveJobReply(RequestState::GOOD, &parseHandler);
+        emit haveJobReply(RequestState::GOOD, parseHandler);
     }
 
 }
@@ -707,4 +709,52 @@ QMap<QString, QString> AgaveTaskReply::convertVarMapToString(QMap<QString, QVari
         }
     }
     return ret;
+}
+
+void AgaveTaskReply::signalConnectDelay()
+{
+    //This method is a stopgap against a reply object finishing before
+    //being connected to anything. This should never happen.
+    int failTrys = 0;
+    while (!anySignalConnect())
+    {
+        failTrys++;
+        if (failTrys > 10)
+        {
+            qDebug("ERROR: Reply object finished before/without connection to rest of program.");
+            return;
+        }
+        QThread::usleep(10);
+    }
+}
+
+bool AgaveTaskReply::anySignalConnect()
+{
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveCurrentRemoteDir))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::connectionsClosed))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveAuthReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveLSReply))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveDeleteReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveMoveReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveCopyReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveRenameReply))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveMkdirReply))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveUploadReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveDownloadReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveBufferDownloadReply))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveJobReply))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveJobList))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveJobDetails))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveStoppedJob))) return true;
+
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveInternalTaskReply))) return true;
+    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveAgaveAppList))) return true;
+
+    return false;
 }
