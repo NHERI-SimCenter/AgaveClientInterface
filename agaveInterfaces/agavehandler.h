@@ -60,7 +60,7 @@ class AgaveHandler : public RemoteDataInterface
     Q_OBJECT
 
 public:
-    explicit AgaveHandler(QObject *parent);
+    explicit AgaveHandler();
     ~AgaveHandler();
 
     virtual QString getUserName();
@@ -90,7 +90,8 @@ public:
     virtual RemoteDataReply * downloadFile(QString localDest, QString remoteName);
     virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
-    virtual RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName = "");
+    virtual RemoteDataReply * runRemoteJob(QString jobName, ParamMap jobParameters, QString remoteWorkingDir, QString indivJobName = "");
+    virtual RemoteDataReply * runRemoteJob(QJsonDocument rawJobJSON);
 
     virtual RemoteDataReply * getListOfJobs();
     virtual RemoteDataReply * getJobDetails(QString IDstr);
@@ -103,6 +104,7 @@ public:
     void forwardAgaveError(QString errorText);
     bool inShutdownMode();
 
+public slots:
     //On Agave Apps:
     //Register info on the Agave App's parameters, using:
     void registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
@@ -115,7 +117,12 @@ public:
 signals:
     void finishedAllTasks();
 
+    void replyObjCreated(AgaveTaskReply * agaveReply);
+
 private slots:
+    //TODO: VERY IMPORTANT, the following MUST be reentrant:
+    //void createReplyObject(AgaveTaskGuide * theGuide, QNetworkReply *newReply, QObject *parent = 0);
+
     void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
     void finishedOneTask(QNetworkReply *reply);
 
@@ -144,7 +151,7 @@ private:
     const QString clientName = "SimCenter_CWE_GUI";
     const QString storageNode = "designsafe.storage.default";
 
-    QByteArray authEncloded;
+    QByteArray authEncoded;
     QByteArray clientEncoded;
     QByteArray token;
     QByteArray tokenHeader;

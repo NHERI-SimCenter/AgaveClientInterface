@@ -43,8 +43,8 @@
 
 //TODO: need to do more double checking of valid file paths
 
-AgaveHandler::AgaveHandler(QObject * parent) :
-        RemoteDataInterface(parent), networkHandle(0), SSLoptions()
+AgaveHandler::AgaveHandler() :
+        RemoteDataInterface(), networkHandle(0), SSLoptions()
 {
     SSLoptions.setProtocol(QSsl::SecureProtocols);
     clearAllAuthTokens();
@@ -84,8 +84,7 @@ QString AgaveHandler::getUserName()
     {
         return authUname;
     }
-    QString empty;
-    return empty;
+    return QString();
 }
 
 bool AgaveHandler::inShutdownMode()
@@ -194,11 +193,11 @@ RemoteDataReply * AgaveHandler::performAuth(QString uname, QString passwd)
     authUname = uname;
     authPass = passwd;
 
-    authEncloded = "Basic ";
+    authEncoded = "Basic ";
     QByteArray rawAuth(uname.toLatin1());
     rawAuth.append(":");
     rawAuth.append(passwd);
-    authEncloded.append(rawAuth.toBase64());
+    authEncoded.append(rawAuth.toBase64());
 
     AgaveTaskReply * parentReply = new AgaveTaskReply(retriveTaskGuide("fullAuth"),NULL,this,(QObject *)this);
     QMap<QString, QByteArray> taskVars;
@@ -354,7 +353,7 @@ AgaveTaskReply *AgaveHandler::getAgaveAppList()
     return performAgaveQuery("getAgaveList");
 }
 
-RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName)
+RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParameters, QString remoteWorkingDir, QString indivJobName)
 {
     //This function is only for Agave Jobs
     AgaveTaskGuide * guideToCheck = retriveTaskGuide(jobName);
@@ -454,6 +453,12 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, QMap<QString, QStr
     return (RemoteDataReply *) theReply;
 }
 
+RemoteDataReply * AgaveHandler::runRemoteJob(QJsonDocument rawJobJSON)
+{
+    //TODO: urgent
+    return NULL;
+}
+
 RemoteDataReply * AgaveHandler::getListOfJobs()
 {
     return (RemoteDataReply *) performAgaveQuery("getJobList");
@@ -523,7 +528,7 @@ void AgaveHandler::clearAllAuthTokens()
     attemptingAuth = false;
     authGained = false;
 
-    authEncloded = "";
+    authEncoded = "";
     clientEncoded = "";
     token = "";
     refreshToken = "";
@@ -971,7 +976,7 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
     }
     else if (taskGuide->getHeaderType() == AuthHeaderType::PASSWD)
     {
-        authHeader = &authEncloded;
+        authHeader = &authEncoded;
     }
     else if (taskGuide->getHeaderType() == AuthHeaderType::REFRESH)
     {
