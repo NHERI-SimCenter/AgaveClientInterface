@@ -223,9 +223,8 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
 
 void AgaveTaskReply::rawTaskComplete()
 {
-    this->deleteLater();
-
     signalConnectDelay();
+    this->deleteLater();
 
     if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
     {
@@ -246,26 +245,18 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }    
 
+    //If this task is an INTERNAL task, then the result is redirected to the manager
+    if (myGuide->isInternal())
+    {
+        emit haveInternalTaskReply(this, myReplyObject);
+        return;
+    }
+
     if (testReply->error() != QNetworkReply::NoError)
     {
         if (testReply->error() == 403)
         {
             myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
-            return;
-        }
-        else if (testReply->error() == 203)
-        {
-            qDebug("File Not found.");
-            if (myGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
-            {
-                emit haveDownloadReply(RequestState::FAIL);
-                return;
-            }
-            if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
-            {
-                emit haveBufferDownloadReply(RequestState::FAIL, NULL);
-                return;
-            }
             return;
         }
         else if (testReply->error() == 3)
@@ -278,6 +269,10 @@ void AgaveTaskReply::rawTaskComplete()
             myManager->forwardAgaveError("DesignSafe Agave Service has dropped connection.");
             return;
         }
+        else if (testReply->error() == 203)
+        {
+            qDebug("File Not found.");
+        }
         else if (testReply->error() == 302)
         {
             qDebug("Agave bad request");
@@ -286,13 +281,7 @@ void AgaveTaskReply::rawTaskComplete()
         {
             qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
         }
-
-    }
-
-    //If this task is an INTERNAL task, then the result is redirected to the manager
-    if (myGuide->isInternal())
-    {
-        emit haveInternalTaskReply(this, myReplyObject);
+        processNoContactReply(myReplyObject->errorString());
         return;
     }
 
@@ -321,14 +310,7 @@ void AgaveTaskReply::rawTaskComplete()
     else if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
     {
         //TODO: consider a better way of doing this for larger files
-        if ((int)myReplyObject->error() == 0)
-        {
-            emit haveBufferDownloadReply(RequestState::GOOD, replyText);
-        }
-        else
-        {
-            processNoContactReply(myReplyObject->errorString());
-        }
+        emit haveBufferDownloadReply(RequestState::GOOD, replyText);
 
         return;
     }
@@ -338,14 +320,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (parseHandler.isNull())
     {
-        if ((int)myReplyObject->error() == 0)
-        {
-            processFailureReply("JSON parse failed");
-        }
-        else
-        {
-            processNoContactReply(myReplyObject->errorString());
-        }
+        processFailureReply("JSON parse failed");
         return;
     }
 

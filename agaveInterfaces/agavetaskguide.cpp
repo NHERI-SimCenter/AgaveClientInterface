@@ -97,6 +97,13 @@ QByteArray AgaveTaskGuide::fillPostArgList(QMap<QString, QByteArray> *argList)
 
 QByteArray AgaveTaskGuide::fillURLArgList(QMap<QString, QByteArray> *argList)
 {
+    //TODO: Check escaping of other chars
+    for (auto itr = argList->begin(); itr != argList->end(); itr++)
+    {
+        if (!(*itr).contains('#')) continue;
+        (*itr).replace('#', "%23");
+    }
+
     return fillAnyArgList(argList, &urlVarNames, &dynURLFormat);
 }
 
