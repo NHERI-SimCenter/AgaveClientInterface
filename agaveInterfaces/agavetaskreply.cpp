@@ -272,6 +272,8 @@ void AgaveTaskReply::rawTaskComplete()
         else if (testReply->error() == 203)
         {
             qDebug("File Not found.");
+            processFailureReply(myReplyObject->errorString());
+            return;
         }
         else if (testReply->error() == 302)
         {
