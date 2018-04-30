@@ -47,6 +47,63 @@ void RemoteDataInterface::setRawDebugOutput(bool newSetting)
     showRawOutputInDebug = newSetting;
 }
 
+QString RemoteDataInterface::interpretRequestState(RequestState theState)
+{
+    switch (theState)
+    {
+    case RequestState::GOOD:
+        return "Request Successful";
+    case RequestState::PENDING:
+        return "Request In Progress";
+    case RequestState::INTERNAL_ERROR:
+        return "Internal error creating reply object";
+    case RequestState::UNKNOWN_TASK:
+        return "Task for reply is not recognized";
+    case RequestState::SIGNAL_OBJ_MISMATCH:
+        return "Network reply does not match reply object";
+    case RequestState::SERVICE_UNAVAILABLE:
+        return "Remote job service is unavailable";
+    case RequestState::LOST_INTERNET:
+        return "Lost Internet connection. Please check connection and restart program.";
+    case RequestState::DROPPED_CONNECTION:
+        return "Remote service has dropped connection.";
+    case RequestState::NO_CHANGE_DIR:
+        return "Change Directory Failed";
+    case RequestState::FILE_NOT_FOUND:
+        return "File Not found";
+    case RequestState::JOB_SYSTEM_DOWN:
+        return "Remote job system may be down for maintainance";
+    case RequestState::BAD_HTTP_REQUEST:
+        return "Invalid HTTP request";
+    case RequestState::GENERIC_NETWORK_ERROR:
+        return "Network error in remote request";
+    case RequestState::NOT_IMPLEMENTED:
+        return "Feature Not Implemented";
+    case RequestState::LOCAL_FILE_ERROR:
+        return "Unable to open local file";
+    case RequestState::JSON_PARSE_ERROR:
+        return "JSON parse failed";
+    case RequestState::MISSING_REPLY_STATUS:
+        return "Missing status string in task reply";
+    case RequestState::MISSING_REPLY_DATA:
+        return "Expected data from remote reply missing or mal-formed";
+    case RequestState::EXPLICIT_ERROR:
+        return "Remote system unable to complete request";
+    case RequestState::INVALID_PARAM:
+        return "Parameters given for task are invalid.";
+    case RequestState::NOT_READY:
+        return "Interface is not ready to enact task";
+    case RequestState::UNCLASSIFIED:
+        return "An unclassified error occured";
+    case RequestState::STOPPED_BY_USER:
+        return "Task stopped by user";
+
+    default:
+        return "INTERNAL ERROR";
+    }
+    return "INTERNAL ERROR (2)";
+}
+
 RemoteDataReply::RemoteDataReply(QObject * parent):QObject(parent) {}
 
 RemoteDataThread::RemoteDataThread(QObject *parent):QThread(parent)
@@ -60,20 +117,13 @@ bool RemoteDataThread::interfaceReady()
     return remoteThreadReady();
 }
 
-void RemoteDataThread::fatalErrorPassthru(QString errorText)
-{
-    emit sendFatalErrorMessage(errorText);
-}
-
 void RemoteDataThread::run()
 {
     if (myInterface == NULL)
     {
-        emit sendFatalErrorMessage("Internal ERROR: Remote Data Thread not subclassed properly.");
+        qDebug("Internal ERROR: Remote Data Thread not subclassed properly.");
         return;
     }
-    QObject::connect(myInterface, SIGNAL(sendFatalErrorMessage(QString)),
-                     this, SLOT(fatalErrorPassthru(QString)));
 
     readyLock.lock();
     connectIsReady = true;

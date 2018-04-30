@@ -45,24 +45,30 @@ AgaveTaskReply::AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply * newRep
 {
     myManager = theManager;
     myGuide = theGuide;
+    myReplyObject = newReply;
+    pendingReply = RequestState::INTERNAL_ERROR;
 
-    //TODO: Need a more graceful checking mechanism for if myManager is specfied
+    if (myManager == NULL)
+    {
+        delayedPassThruReply(RequestState::INTERNAL_ERROR);
+        return;
+    }
 
     if (myGuide == NULL)
     {
-        myManager->forwardAgaveError("Task Reply has no task guide.");
-        return;
-    }
-    myReplyObject = newReply;
-    if ((myReplyObject == NULL) && (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE))
-    {
-        myManager->forwardAgaveError("Task Reply has no network reply.");
+        delayedPassThruReply(RequestState::UNKNOWN_TASK);
         return;
     }
 
-    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
+    if ((myReplyObject == NULL) && (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE))
     {
-        pendingReply = RequestState::NO_CONNECT;
+        delayedPassThruReply(RequestState::INTERNAL_ERROR);
+        return;
+    }
+
+    if (myGuide->getTaskID() == "waitAll")
+    {
+        pendingReply = RequestState::GOOD;
     }
 
     if (myReplyObject != NULL)
@@ -84,13 +90,15 @@ QMap<QString, QByteArray> * AgaveTaskReply::getTaskParamList()
     return &taskParamList;
 }
 
-void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * param1)
+void AgaveTaskReply::delayedPassThruReply(RequestState replyState)
 {
-    if (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE)
-    {
-        myManager->forwardAgaveError("Passthru reply invoked on invalid task");
-        return;
-    }
+    delayedPassThruReply(replyState, QString());
+}
+
+void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString param1)
+{
+    if (usingPassThru) return;
+    usingPassThru = true;
 
     pendingReply = replyState;
     if (param1 == NULL)
@@ -99,7 +107,7 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
     }
     else
     {
-        pendingParam = *param1;
+        pendingParam = param1;
     }
 
     QTimer * quickTimer = new QTimer((QObject*)this);
@@ -110,29 +118,17 @@ void AgaveTaskReply::delayedPassThruReply(RequestState replyState, QString * par
 void AgaveTaskReply::invokePassThruReply()
 {
     this->deleteLater();
-    if (myGuide->getRequestType() != AgaveRequestType::AGAVE_NONE)
+
+    if (pendingReply == RequestState::GOOD)
     {
-        myManager->forwardAgaveError("Passthru reply invoked on invalid task");
-        return;
-    }
-    if (myGuide->getTaskID() == "changeDir")
-    {
-        emit haveCurrentRemoteDir(pendingReply, pendingParam);
-        return;
-    }
-    if (myGuide->getTaskID() == "fullAuth")
-    {
-        emit haveAuthReply(pendingReply);
-        return;
-    }
-    if (myGuide->getTaskID() == "waitAll")
-    {
-        emit connectionsClosed(pendingReply);
-        return;
+        if (myGuide->getTaskID() == "changeDir")
+        {
+            emit haveCurrentRemoteDir(pendingReply, pendingParam);
+            return;
+        }
     }
 
-    myManager->forwardAgaveError("Passthru reply not implemented");
-    return;
+    processDatalessReply(pendingReply);
 }
 
 AgaveTaskGuide * AgaveTaskReply::getTaskGuide()
@@ -140,32 +136,34 @@ AgaveTaskGuide * AgaveTaskReply::getTaskGuide()
     return myGuide;
 }
 
-void AgaveTaskReply::processNoContactReply(QString errorText)
-{
-    processBadReply(RequestState::NO_CONNECT, errorText);
-}
-
-void AgaveTaskReply::processFailureReply(QString errorText)
-{
-    processBadReply(RequestState::FAIL, errorText);
-}
-
-void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
-{
-    qDebug("%s", qPrintable(errorText));
+void AgaveTaskReply::processDatalessReply(RequestState replyState)
+{   
+    if (replyState != RequestState::GOOD)
+    {
+        qDebug("Agave Task Fail: %s", qPrintable(RemoteDataInterface::interpretRequestState(replyState)));
+    }
 
     if (myGuide->getTaskID() == "changeDir")
     {
-        myManager->forwardAgaveError("Change Dir failed.");
+        emit haveCurrentRemoteDir(replyState, QString());
+    }
+    else if (myGuide->getTaskID() == "fullAuth")
+    {
+        emit haveAuthReply(replyState);
     }
     else if (myGuide->getTaskID() == "authRefresh")
     {
         //TODO: Auth refresh needs to be implemented
-        myManager->forwardAgaveError("Auth refresh not implemented");
+        qDebug("Auth refresh fail: Not yet implemented");
+        return;
     }
     else if (myGuide->getTaskID() == "dirListing")
     {
         emit haveLSReply(replyState, QList<FileMetaData>());
+    }
+    else if (myGuide->getTaskID() == "waitAll")
+    {
+        emit connectionsClosed(replyState);
     }
     else if ((myGuide->getTaskID() == "fileUpload") || (myGuide->getTaskID() == "filePipeUpload"))
     {
@@ -173,7 +171,7 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
-        emit haveDeleteReply(replyState);
+        emit haveDeleteReply(replyState, QString());
     }
     else if (myGuide->getTaskID() == "newFolder")
     {
@@ -181,11 +179,11 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "renameFile")
     {
-        emit haveRenameReply(replyState, FileMetaData());
+        emit haveRenameReply(replyState, FileMetaData(), QString());
     }
     else if (myGuide->getTaskID() == "fileMove")
     {
-        emit haveMoveReply(replyState, FileMetaData());
+        emit haveMoveReply(replyState, FileMetaData(), QString());
     }
     else if (myGuide->getTaskID() == "fileCopy")
     {
@@ -193,7 +191,7 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     }
     else if (myGuide->getTaskID() == "fileDownload")
     {
-        emit haveDownloadReply(replyState);
+        emit haveDownloadReply(replyState, QString());
     }
     else if (myGuide->getTaskID() == "filePipeDownload")
     {
@@ -219,14 +217,20 @@ void AgaveTaskReply::processBadReply(RequestState replyState, QString errorText)
     {
         emit haveJobReply(replyState, QJsonDocument());
     }
+
 }
 
 void AgaveTaskReply::rawTaskComplete()
 {
-    signalConnectDelay();
+    if (!myGuide->isInternal())
+    {
+        signalConnectDelay();
+    }
+
     this->deleteLater();
 
-    if (myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE)
+    if ((myGuide->getRequestType() == AgaveRequestType::AGAVE_NONE) ||
+            (usingPassThru == true) || (myReplyObject == NULL))
     {
         invokePassThruReply();
         return;
@@ -241,14 +245,14 @@ void AgaveTaskReply::rawTaskComplete()
     QNetworkReply * testReply = qobject_cast<QNetworkReply *>(sender());
     if (testReply != myReplyObject)
     {
-        myManager->forwardAgaveError("Network reply does not match agave reply");
+        processDatalessReply(RequestState::SIGNAL_OBJ_MISMATCH);
         return;
     }    
 
     //If this task is an INTERNAL task, then the result is redirected to the manager
     if (myGuide->isInternal())
     {
-        emit haveInternalTaskReply(this, myReplyObject);
+        myManager->handleInternalTask(this, myReplyObject);
         return;
     }
 
@@ -256,34 +260,34 @@ void AgaveTaskReply::rawTaskComplete()
     {
         if (testReply->error() == 403)
         {
-            myManager->forwardAgaveError("DesignSafe Agave Service is Unavailable.");
-            return;
+            processDatalessReply(RequestState::SERVICE_UNAVAILABLE);
         }
         else if (testReply->error() == 3)
         {
-            myManager->forwardAgaveError("Lost Internet connection. Please check connection and restart program.");
-            return;
+            processDatalessReply(RequestState::LOST_INTERNET);
         }
         else if (testReply->error() == 2)
         {
-            myManager->forwardAgaveError("DesignSafe Agave Service has dropped connection.");
-            return;
+            processDatalessReply(RequestState::DROPPED_CONNECTION);
         }
         else if (testReply->error() == 203)
         {
-            qDebug("File Not found.");
-            processFailureReply(myReplyObject->errorString());
-            return;
+            processDatalessReply(RequestState::FILE_NOT_FOUND);
+        }
+        else if (testReply->error() == 299)
+        {
+            processDatalessReply(RequestState::JOB_SYSTEM_DOWN);
         }
         else if (testReply->error() == 302)
         {
-            qDebug("Agave bad request");
+            processDatalessReply(RequestState::BAD_HTTP_REQUEST);
         }
         else
         {
+            processDatalessReply(RequestState::GENERIC_NETWORK_ERROR);
+
             qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
         }
-        processNoContactReply(myReplyObject->errorString());
         return;
     }
 
@@ -295,8 +299,8 @@ void AgaveTaskReply::rawTaskComplete()
         QFile * fileHandle = new QFile(taskParamList.value("localDest"));
         if (!fileHandle->open(QIODevice::WriteOnly))
         {
-            processFailureReply("Could not open local file for writing");
             fileHandle->deleteLater();
+            processDatalessReply(RequestState::LOCAL_FILE_ERROR);
             return;
         }
 
@@ -306,7 +310,7 @@ void AgaveTaskReply::rawTaskComplete()
         fileHandle->close();
         fileHandle->deleteLater();
 
-        emit haveDownloadReply(RequestState::GOOD);
+        emit haveDownloadReply(RequestState::GOOD, taskParamList.value("localDest"));
         return;
     }
     else if (myGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD)
@@ -322,7 +326,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if (parseHandler.isNull())
     {
-        processFailureReply("JSON parse failed");
+        processDatalessReply(RequestState::JSON_PARSE_ERROR);
         return;
     }
 
@@ -333,25 +337,22 @@ void AgaveTaskReply::rawTaskComplete()
 
     RequestState prelimResult = standardSuccessFailCheck(myGuide, &parseHandler);
 
-    if (prelimResult == RequestState::NO_CONNECT)
+    if (prelimResult != RequestState::GOOD)
     {
-        processNoContactReply("Missing Status String");
-    }
-    else if (prelimResult == RequestState::FAIL)
-    {
-        processFailureReply("Request rejected by remote system");
+        processDatalessReply(prelimResult);
+        return;
     }
 
     if (myGuide->getTaskID() == "authRefresh")
     {
-        myManager->forwardAgaveError("Auth refresh not implemented yet");
+        processDatalessReply(RequestState::NOT_IMPLEMENTED);
     }
     else if (myGuide->getTaskID() == "dirListing")
     {
         QJsonValue expectedArray = retriveMainAgaveJSON(&parseHandler,"result");
         if (!expectedArray.isArray())
         {
-            processFailureReply("Parse gives no array for file list.");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
         QJsonArray fileArray = expectedArray.toArray();
@@ -361,7 +362,7 @@ void AgaveTaskReply::rawTaskComplete()
             FileMetaData aFile = parseJSONfileMetaData((*itr).toObject());
             if (aFile.getFileType() == FileType::INVALID)
             {
-                processFailureReply("Parse gives invalid array for file list.");
+                processDatalessReply(RequestState::MISSING_REPLY_DATA);
                 return;
             }
             fileList.append(aFile);
@@ -374,14 +375,14 @@ void AgaveTaskReply::rawTaskComplete()
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
         if (aFile.getFileType() == FileType::INVALID)
         {
-            processFailureReply("Invalid file data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
         emit haveUploadReply(RequestState::GOOD, aFile);
     }
     else if (myGuide->getTaskID() == "fileDelete")
     {
-        emit haveDeleteReply(RequestState::GOOD);
+        emit haveDeleteReply(RequestState::GOOD, taskParamList.value("toDelete"));
     }
     else if (myGuide->getTaskID() == "newFolder")
     {
@@ -389,7 +390,7 @@ void AgaveTaskReply::rawTaskComplete()
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
         if (aFile.getFileType() == FileType::INVALID)
         {
-            processFailureReply("Invalid file data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
         emit haveMkdirReply(RequestState::GOOD, aFile);
@@ -400,10 +401,10 @@ void AgaveTaskReply::rawTaskComplete()
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
         if (aFile.getFileType() == FileType::INVALID)
         {
-            processFailureReply("Invalid file data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
-        emit haveRenameReply(RequestState::GOOD, aFile);
+        emit haveRenameReply(RequestState::GOOD, aFile, taskParamList.value("fullName"));
     }
     else if (myGuide->getTaskID() == "fileCopy")
     {
@@ -411,7 +412,7 @@ void AgaveTaskReply::rawTaskComplete()
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
         if (aFile.getFileType() == FileType::INVALID)
         {
-            processFailureReply("Invalid file data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
         emit haveCopyReply(RequestState::GOOD, aFile);
@@ -422,10 +423,10 @@ void AgaveTaskReply::rawTaskComplete()
         FileMetaData aFile = parseJSONfileMetaData(expectedObject.toObject());
         if (aFile.getFileType() == FileType::INVALID)
         {
-            processFailureReply("Invalid file data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
-        emit haveMoveReply(RequestState::GOOD, aFile);
+        emit haveMoveReply(RequestState::GOOD, aFile, taskParamList.value("from"));
     }
     else if (myGuide->getTaskID() == "getJobList")
     {
@@ -440,7 +441,7 @@ void AgaveTaskReply::rawTaskComplete()
         RemoteJobData jobData = parseJSONjobDetails(expectedObject.toObject());
         if (jobData.getState() == "ERROR")
         {
-            processFailureReply("Invalid job data");
+            processDatalessReply(RequestState::MISSING_REPLY_DATA);
             return;
         }
         emit haveJobDetails(RequestState::GOOD, jobData);
@@ -470,7 +471,7 @@ RequestState AgaveTaskReply::standardSuccessFailCheck(AgaveTaskGuide * taskGuide
     {
         if (parsedDoc->object().contains("error"))
         {
-            return RequestState::FAIL;
+            return RequestState::EXPLICIT_ERROR;
         }
     }
     else
@@ -479,11 +480,11 @@ RequestState AgaveTaskReply::standardSuccessFailCheck(AgaveTaskGuide * taskGuide
 
         if (statusString == "error")
         {
-            return RequestState::FAIL;
+            return RequestState::EXPLICIT_ERROR;
         }
         else if (statusString != "success")
         {
-            return RequestState::NO_CONNECT;
+            return RequestState::MISSING_REPLY_STATUS;
         }
     }
     return RequestState::GOOD;
@@ -730,7 +731,6 @@ bool AgaveTaskReply::anySignalConnect()
     if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveJobDetails))) return true;
     if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveStoppedJob))) return true;
 
-    if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveInternalTaskReply))) return true;
     if (isSignalConnected(QMetaMethod::fromSignal(&AgaveTaskReply::haveAgaveAppList))) return true;
 
     return false;

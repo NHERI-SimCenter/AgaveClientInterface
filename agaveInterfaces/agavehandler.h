@@ -59,6 +59,8 @@ class AgaveHandler : public RemoteDataInterface
 {
     Q_OBJECT
 
+    friend class AgaveTaskReply;
+
 public:
     explicit AgaveHandler();
     ~AgaveHandler();
@@ -101,7 +103,6 @@ public:
     //Agave Specific Functions:
 
     QString getTenantURL();
-    void forwardAgaveError(QString errorText);
     bool inShutdownMode();
 
 public slots:
@@ -117,14 +118,11 @@ public slots:
 signals:
     void finishedAllTasks();
 
-    void replyObjCreated(AgaveTaskReply * agaveReply);
+protected:
+    void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
 
 private slots:
-    //TODO: VERY IMPORTANT, the following MUST be reentrant:
-    //void createReplyObject(AgaveTaskGuide * theGuide, QNetworkReply *newReply, QObject *parent = 0);
-
-    void handleInternalTask(AgaveTaskReply *agaveReply, QNetworkReply * rawReply);
-    void finishedOneTask(QNetworkReply *reply);
+    void finishedOneTask();
 
 private:
     AgaveTaskReply * performAgaveQuery(QString queryName);
@@ -133,7 +131,8 @@ private:
     QNetworkReply * distillRequestData(AgaveTaskGuide * theGuide, QMap<QString, QByteArray> * varList);
     QNetworkReply * finalizeAgaveRequest(AgaveTaskGuide * theGuide, QString urlAppend, QByteArray * authHeader = NULL, QByteArray postData = "", QIODevice * fileHandle = NULL);
 
-    void forwardReplyToParent(AgaveTaskReply * agaveReply, RequestState replyState, QString * param1 = NULL);
+    void forwardReplyToParent(AgaveTaskReply * agaveReply, RequestState replyState);
+    void forwardReplyToParent(AgaveTaskReply * agaveReply, RequestState replyState, QString param1);
 
     void clearAllAuthTokens();
 

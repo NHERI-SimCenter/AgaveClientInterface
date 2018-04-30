@@ -48,15 +48,17 @@ class AgaveTaskGuide;
 class AgaveTaskReply : public RemoteDataReply
 {
     Q_OBJECT
+
 public:
     explicit AgaveTaskReply(AgaveTaskGuide * theGuide, QNetworkReply *newReply, AgaveHandler * theManager, QObject *parent = 0);
     ~AgaveTaskReply();
 
-    virtual QMap<QString, QByteArray> *getTaskParamList();
+    QMap<QString, QByteArray> *getTaskParamList();
 
     //-------------------------------------------------
     //Agave specific:
-    void delayedPassThruReply(RequestState replyState, QString * param1 = NULL);
+    void delayedPassThruReply(RequestState replyState);
+    void delayedPassThruReply(RequestState replyState, QString param1);
 
     AgaveTaskGuide * getTaskGuide();
 
@@ -74,9 +76,6 @@ public:
     static QMap<QString, QString> convertVarMapToString(QMap<QString, QVariant> inMap);
 
 signals:
-    //For redirecting info to the Agave handler, do not use otherwise:
-    void haveInternalTaskReply(AgaveTaskReply * theGuide, QNetworkReply * rawReply);
-
     //TODO: Concerned that this might hide that passing of an implictly shared object
     //Double-check that the data is all passed.
     void haveAgaveAppList(RequestState theGuide, QVariantList appsList);
@@ -90,10 +89,7 @@ private:
 
     void invokePassThruReply();
 
-    void processNoContactReply(QString errorText);
-    void processFailureReply(QString errorText);
-
-    void processBadReply(RequestState replyState, QString errorText);
+    void processDatalessReply(RequestState replyState);
 
     AgaveHandler * myManager = NULL;
     AgaveTaskReply * passThruRef = NULL;
@@ -103,6 +99,7 @@ private:
     //PassThru reply store:
     RequestState pendingReply;
     QString pendingParam;
+    bool usingPassThru = false;
 
     QMap<QString, QByteArray> taskParamList;
 };

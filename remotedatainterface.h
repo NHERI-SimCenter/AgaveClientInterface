@@ -52,7 +52,18 @@ Q_DECLARE_METATYPE(ParamMap)
 //Good means the request was good and
 //Fail means the remote service replied, but did not like the request, for some reason
 //No Connect means that the request did not get thru to the remote service at all
-enum class RequestState {FAIL, GOOD, NO_CONNECT};
+enum class RequestState {GOOD, PENDING,
+                         UNKNOWN_TASK, INTERNAL_ERROR,
+                         SIGNAL_OBJ_MISMATCH, SERVICE_UNAVAILABLE,
+                         LOST_INTERNET, DROPPED_CONNECTION,
+                         NO_CHANGE_DIR, FILE_NOT_FOUND,
+                         JOB_SYSTEM_DOWN, BAD_HTTP_REQUEST,
+                         GENERIC_NETWORK_ERROR,
+                         LOCAL_FILE_ERROR, JSON_PARSE_ERROR,
+                         EXPLICIT_ERROR, MISSING_REPLY_STATUS,
+                         MISSING_REPLY_DATA, STOPPED_BY_USER,
+                         INVALID_PARAM, NOT_READY,
+                         NOT_IMPLEMENTED, UNCLASSIFIED};
 //If RemoteDataReply returned is NULL, then the request was invalid due to internal error
 
 class RemoteDataReply : public QObject
@@ -62,11 +73,6 @@ class RemoteDataReply : public QObject
 public:
     RemoteDataReply(QObject * parent);
 
-    //If one needs to know the parameters or data passed to the initial task,
-    //find them returned here:
-    virtual QMap<QString, QByteArray> * getTaskParamList() = 0;
-    //The object returned here is destroyed with the RemoteDataReply
-
 signals:
     //All referenced values should be copied by the reciever or they will be discarded
     void haveCurrentRemoteDir(RequestState replyState, QString pwd);
@@ -75,15 +81,15 @@ signals:
     void haveAuthReply(RequestState authReply);
     void haveLSReply(RequestState replyState, QList<FileMetaData> fileDataList);
 
-    void haveDeleteReply(RequestState replyState);
-    void haveMoveReply(RequestState replyState, FileMetaData revisedFileData);
+    void haveDeleteReply(RequestState replyState, QString toDelete);
+    void haveMoveReply(RequestState replyState, FileMetaData revisedFileData, QString from);
     void haveCopyReply(RequestState replyState, FileMetaData newFileData);
-    void haveRenameReply(RequestState replyState, FileMetaData newFileData);
+    void haveRenameReply(RequestState replyState, FileMetaData newFileData, QString oldName);
 
     void haveMkdirReply(RequestState replyState, FileMetaData newFolderData);
 
     void haveUploadReply(RequestState replyState, FileMetaData newFileData);
-    void haveDownloadReply(RequestState replyState);
+    void haveDownloadReply(RequestState replyState, QString localDest);
     void haveBufferDownloadReply(RequestState replyState, QByteArray fileBuffer);
 
     //Job replys should be in an intelligble format, JSON is used by Agave and AWS for various things
@@ -137,9 +143,7 @@ public slots:
 
     bool rawOutputDebugEnabled();
     void setRawDebugOutput(bool newSetting);
-
-signals:
-    void sendFatalErrorMessage(QString errorText);
+    static QString interpretRequestState(RequestState theState);
 
 private:
     bool showRawOutputInDebug = false;
@@ -195,12 +199,6 @@ public:
 
     bool rawOutputDebugEnabled();
     void setRawDebugOutput(bool newSetting);
-
-signals:
-    void sendFatalErrorMessage(QString errorText);
-
-private slots:
-    void fatalErrorPassthru(QString errorText);
 
 protected:
     //In subclass, run() method should point this to a
