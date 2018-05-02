@@ -387,7 +387,6 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParame
         rootObject.insert("name",QJsonValue(indivJobName));
     }
 
-
     if (jobName.startsWith("cwe-"))
     {
         QString stageName = jobParameters.value("stage");
@@ -454,10 +453,17 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParame
     return (RemoteDataReply *) theReply;
 }
 
-RemoteDataReply * AgaveHandler::runRemoteJob(QJsonDocument rawJobJSON)
+RemoteDataReply * AgaveHandler::runAgaveJob(QJsonDocument rawJobJSON)
 {
-    //TODO: urgent
-    return NULL;
+    QMap<QString, QByteArray> taskVars;
+
+    taskVars.insert("rawJobJSON", rawJobJSON.toJson());
+    taskVars.insert("fileData", rawJobJSON.toJson());
+
+    qDebug("%s",qPrintable(rawJobJSON.toJson()));
+
+    AgaveTaskReply * theReply = performAgaveQuery("agaveAppStart", taskVars);
+    return (RemoteDataReply *) theReply;
 }
 
 RemoteDataReply * AgaveHandler::getListOfJobs()

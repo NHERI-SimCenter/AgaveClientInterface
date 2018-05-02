@@ -93,7 +93,7 @@ public:
     virtual RemoteDataReply * downloadBuffer(QString remoteName);
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, ParamMap jobParameters, QString remoteWorkingDir, QString indivJobName = "");
-    virtual RemoteDataReply * runRemoteJob(QJsonDocument rawJobJSON);
+    RemoteDataReply * runAgaveJob(QJsonDocument rawJobJSON);
 
     virtual RemoteDataReply * getListOfJobs();
     virtual RemoteDataReply * getJobDetails(QString IDstr);
