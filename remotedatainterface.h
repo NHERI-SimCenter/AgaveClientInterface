@@ -135,7 +135,6 @@ public slots:
     virtual RemoteDataReply * downloadBuffer(QString remoteName) = 0;
 
     virtual RemoteDataReply * runRemoteJob(QString jobName, ParamMap jobParameters, QString remoteWorkingDir, QString indivJobName = "") = 0;
-    virtual RemoteDataReply * runRemoteJob(QJsonDocument rawJobJSON) = 0;
 
     virtual RemoteDataReply * getListOfJobs() = 0;
     virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;
