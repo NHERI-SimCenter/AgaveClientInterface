@@ -88,13 +88,13 @@ QString AgaveHandler::getUserName()
     return QString();
 }
 
-bool AgaveHandler::isLoggedIn()
+bool AgaveHandler::isDisconnected()
 {
-    if ((authGained) && (!performingShutdown))
+    if (attemptingAuth || authGained)
     {
-        return true;
+        return false;
     }
-    return false;
+    return true;
 }
 
 bool AgaveHandler::inShutdownMode()
@@ -196,8 +196,9 @@ QString AgaveHandler::getPathReletiveToCWD(QString inputPath)
 
 RemoteDataReply * AgaveHandler::performAuth(QString uname, QString passwd)
 {   
-    if (attemptingAuth || authGained)
+    if (!isDisconnected())
     {
+        qDebug("Login attempted while logged in or logging in.");
         return NULL;
     }
     authUname = uname;
