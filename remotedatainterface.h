@@ -109,6 +109,7 @@ public:
 
 public slots:
     virtual QString getUserName() = 0;
+    virtual bool isLoggedIn() = 0;
 
     //Defaults to directory root,
     //Subsequent commands with remote folder names are either absolute paths
@@ -190,7 +191,6 @@ public:
     RemoteDataReply * downloadBuffer(QString remoteName);
 
     RemoteDataReply * runRemoteJob(QString jobName, QMap<QString, QString> jobParameters, QString remoteWorkingDir, QString indivJobName = "");
-    RemoteDataReply * runRemoteJob(QJsonDocument rawJobJSON);
 
     RemoteDataReply * getListOfJobs();
     RemoteDataReply * getJobDetails(QString IDstr);

@@ -49,6 +49,8 @@ public:
     void registerAgaveAppInfo(QString agaveAppName, QString fullAgaveName, QStringList parameterList, QStringList inputList, QString workingDirParameter);
     AgaveTaskReply * getAgaveAppList();
 
+    AgaveTaskReply * runRemoteJob(QJsonDocument rawJobJSON);
+
 protected:
     virtual void run();
 };

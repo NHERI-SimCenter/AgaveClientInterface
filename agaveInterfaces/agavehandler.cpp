@@ -88,6 +88,15 @@ QString AgaveHandler::getUserName()
     return QString();
 }
 
+bool AgaveHandler::isLoggedIn()
+{
+    if ((authGained) && (!performingShutdown))
+    {
+        return true;
+    }
+    return false;
+}
+
 bool AgaveHandler::inShutdownMode()
 {
     return performingShutdown;
