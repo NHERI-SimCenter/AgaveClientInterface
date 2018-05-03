@@ -170,6 +170,7 @@ public:
     //Also, to be safe, RemoteDataReply objects show wait if not connected, in case they finish before
     //connection is made
     QString getUserName();
+    bool isLoggedIn();
 
     RemoteDataReply * setCurrentRemoteWorkingDirectory(QString cd);
     RemoteDataReply * closeAllConnections();

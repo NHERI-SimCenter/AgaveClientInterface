@@ -153,6 +153,17 @@ QString RemoteDataThread::getUserName()
     return retVal;
 }
 
+bool RemoteDataThread::isLoggedIn()
+{
+    QMutexLocker lock(&readyLock);
+
+    if (!remoteThreadReady()) return false;
+    bool retVal = false;
+    QMetaObject::invokeMethod(myInterface, "isLoggedIn", Qt::BlockingQueuedConnection,
+                              Q_RETURN_ARG(bool, retVal));
+    return retVal;
+}
+
 RemoteDataReply * RemoteDataThread::setCurrentRemoteWorkingDirectory(QString cd)
 {
     QMutexLocker lock(&readyLock);
