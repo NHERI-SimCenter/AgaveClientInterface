@@ -66,7 +66,7 @@ public:
     ~AgaveHandler();
 
     virtual QString getUserName();
-    virtual bool isLoggedIn();
+    virtual bool isDisconnected();
 
     virtual RemoteDataReply * closeAllConnections();
 

@@ -153,13 +153,13 @@ QString RemoteDataThread::getUserName()
     return retVal;
 }
 
-bool RemoteDataThread::isLoggedIn()
+bool RemoteDataThread::isDisconnected()
 {
     QMutexLocker lock(&readyLock);
 
     if (!remoteThreadReady()) return false;
     bool retVal = false;
-    QMetaObject::invokeMethod(myInterface, "isLoggedIn", Qt::BlockingQueuedConnection,
+    QMetaObject::invokeMethod(myInterface, "isDisconnected", Qt::BlockingQueuedConnection,
                               Q_RETURN_ARG(bool, retVal));
     return retVal;
 }
