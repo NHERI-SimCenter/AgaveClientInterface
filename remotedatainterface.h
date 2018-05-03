@@ -109,7 +109,7 @@ public:
 
 public slots:
     virtual QString getUserName() = 0;
-    virtual bool isLoggedIn() = 0;
+    virtual bool isDisconnected() = 0;
 
     //Defaults to directory root,
     //Subsequent commands with remote folder names are either absolute paths
@@ -170,7 +170,7 @@ public:
     //Also, to be safe, RemoteDataReply objects show wait if not connected, in case they finish before
     //connection is made
     QString getUserName();
-    bool isLoggedIn();
+    bool isDisconnected();
 
     RemoteDataReply * setCurrentRemoteWorkingDirectory(QString cd);
     RemoteDataReply * closeAllConnections();
