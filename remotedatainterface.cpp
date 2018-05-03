@@ -332,18 +332,6 @@ RemoteDataReply * RemoteDataThread::runRemoteJob(QString jobName, QMap<QString, 
     return retVal;
 }
 
-RemoteDataReply * RemoteDataThread::runRemoteJob(QJsonDocument rawJobJSON)
-{
-    QMutexLocker lock(&readyLock);
-
-    if (!remoteThreadReady()) return NULL;
-    RemoteDataReply * retVal = NULL;
-    QMetaObject::invokeMethod(myInterface, "runRemoteJob", Qt::BlockingQueuedConnection,
-                              Q_RETURN_ARG(RemoteDataReply *, retVal),
-                              Q_ARG(QJsonDocument, rawJobJSON));
-    return retVal;
-}
-
 RemoteDataReply * RemoteDataThread::getListOfJobs()
 {
     QMutexLocker lock(&readyLock);
@@ -383,7 +371,7 @@ bool RemoteDataThread::rawOutputDebugEnabled()
 {
     QMutexLocker lock(&readyLock);
 
-    if (!remoteThreadReady()) return NULL;
+    if (!remoteThreadReady()) return false;
     bool retVal;
     QMetaObject::invokeMethod(myInterface, "rawOutputDebugEnabled", Qt::BlockingQueuedConnection,
                               Q_RETURN_ARG(bool, retVal));
