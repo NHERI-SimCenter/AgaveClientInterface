@@ -35,17 +35,10 @@
 
 #include "remotedatainterface.h"
 
+Q_LOGGING_CATEGORY(remoteInterface, "Remote Interface")
+Q_LOGGING_CATEGORY(rawHTTP, "Raw HTTP")
+
 RemoteDataInterface::RemoteDataInterface(QObject *parent):QObject(parent) {}
-
-bool RemoteDataInterface::rawOutputDebugEnabled()
-{
-    return showRawOutputInDebug;
-}
-
-void RemoteDataInterface::setRawDebugOutput(bool newSetting)
-{
-    showRawOutputInDebug = newSetting;
-}
 
 QString RemoteDataInterface::interpretRequestState(RequestState theState)
 {
@@ -121,7 +114,7 @@ void RemoteDataThread::run()
 {
     if (myInterface == NULL)
     {
-        qDebug("Internal ERROR: Remote Data Thread not subclassed properly.");
+        qCDebug(remoteInterface, "Internal ERROR: Remote Data Thread not subclassed properly.");
         return;
     }
 
@@ -376,24 +369,4 @@ RemoteDataReply * RemoteDataThread::stopJob(QString IDstr)
                               Q_RETURN_ARG(RemoteDataReply *, retVal),
                               Q_ARG(QString, IDstr));
     return retVal;
-}
-
-bool RemoteDataThread::rawOutputDebugEnabled()
-{
-    QMutexLocker lock(&readyLock);
-
-    if (!remoteThreadReady()) return false;
-    bool retVal;
-    QMetaObject::invokeMethod(myInterface, "rawOutputDebugEnabled", Qt::BlockingQueuedConnection,
-                              Q_RETURN_ARG(bool, retVal));
-    return retVal;
-}
-
-void RemoteDataThread::setRawDebugOutput(bool newSetting)
-{
-    QMutexLocker lock(&readyLock);
-
-    if (!remoteThreadReady()) return;
-    QMetaObject::invokeMethod(myInterface, "rawOutputDebugEnabled", Qt::BlockingQueuedConnection,
-                              Q_ARG(bool, newSetting));
 }
