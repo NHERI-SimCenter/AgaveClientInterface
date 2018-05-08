@@ -58,7 +58,7 @@ void AgaveHandler::finishedOneTask()
     pendingRequestCount--;
     if (pendingRequestCount < 0)
     {
-        qDebug("Internal Error: Request count becoming negative");
+        qCDebug(remoteInterface, "Internal Error: Request count becoming negative");
         pendingRequestCount = 0;
     }
     if (pendingRequestCount == 0)
@@ -71,7 +71,7 @@ AgaveHandler::~AgaveHandler()
 {
     if ((performingShutdown == false) || (authGained == true))
     {
-        qDebug("ERROR: Agave Handler destroyed without proper shutdown");
+        qCDebug(remoteInterface, "ERROR: Agave Handler destroyed without proper shutdown");
     }
     foreach (AgaveTaskGuide * aTaskGuide , validTaskList)
     {
@@ -198,7 +198,7 @@ RemoteDataReply * AgaveHandler::performAuth(QString uname, QString passwd)
 {   
     if (!isDisconnected())
     {
-        qDebug("Login attempted while logged in or logging in.");
+        qCDebug(remoteInterface, "Login attempted while logged in or logging in.");
         return NULL;
     }
     authUname = uname;
@@ -370,18 +370,18 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParame
     AgaveTaskGuide * guideToCheck = retriveTaskGuide(jobName);
     if (guideToCheck == NULL)
     {
-        qDebug("ERROR: Agave App not configured");
+        qCDebug(remoteInterface, "ERROR: Agave App not configured");
         return NULL;
     }
     if (guideToCheck->getRequestType() != AgaveRequestType::AGAVE_APP)
     {
-        qDebug("ERROR: Agave App not configured as Agave App");
+        qCDebug(remoteInterface, "ERROR: Agave App not configured as Agave App");
         return NULL;
     }
     QString fullAgaveName = guideToCheck->getAgaveFullName();
     if (fullAgaveName.isEmpty())
     {
-        qDebug("ERROR: Agave App does not have a full name");
+        qCDebug(remoteInterface, "ERROR: Agave App does not have a full name");
         return NULL;
     }
 
@@ -442,7 +442,7 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParame
         }
         else
         {
-            qDebug("ERROR: Agave App given invalid parameter");
+            qCDebug(remoteInterface, "ERROR: Agave App given invalid parameter");
             return NULL;
         }
 
@@ -457,7 +457,7 @@ RemoteDataReply * AgaveHandler::runRemoteJob(QString jobName, ParamMap jobParame
     taskVars.insert("rawJSONinput", rawJSONinput.toJson());
     taskVars.insert("fileData", rawJSONinput.toJson());
 
-    qDebug("%s",qPrintable(rawJSONinput.toJson()));
+    qCDebug(remoteInterface, "%s",qPrintable(rawJSONinput.toJson()));
 
     AgaveTaskReply * theReply = performAgaveQuery("agaveAppStart", taskVars);
     return (RemoteDataReply *) theReply;
@@ -470,7 +470,7 @@ RemoteDataReply * AgaveHandler::runAgaveJob(QJsonDocument rawJobJSON)
     taskVars.insert("rawJobJSON", rawJobJSON.toJson());
     taskVars.insert("fileData", rawJobJSON.toJson());
 
-    qDebug("%s",qPrintable(rawJobJSON.toJson()));
+    qCDebug(remoteInterface, "%s",qPrintable(rawJobJSON.toJson()));
 
     AgaveTaskReply * theReply = performAgaveQuery("agaveAppStart", taskVars);
     return (RemoteDataReply *) theReply;
@@ -520,7 +520,7 @@ RemoteDataReply * AgaveHandler::closeAllConnections()
     }
     if ((clientEncoded != "") && (token != ""))
     {
-        qDebug("Closing all connections sequence begins");
+        qCDebug(remoteInterface, "Closing all connections sequence begins");
         QMap<QString, QByteArray> taskVars;
         taskVars.insert("token", token);
         performAgaveQuery("authRevoke", taskVars);
@@ -528,7 +528,7 @@ RemoteDataReply * AgaveHandler::closeAllConnections()
     }
     else
     {
-        qDebug("Not logged in: quick shutdown");
+        qCDebug(remoteInterface, "Not logged in: quick shutdown");
         clearAllAuthTokens();
     }
     QObject::connect(this, SIGNAL(finishedAllTasks()), waitHandle, SLOT(rawTaskComplete()));
@@ -710,7 +710,7 @@ void AgaveHandler::insertAgaveTaskGuide(AgaveTaskGuide * newGuide)
     QString taskName = newGuide->getTaskID();
     if (validTaskList.contains(taskName))
     {
-        qDebug("ERROR: Invalid Task Guide List: Duplicate Name");
+        qCDebug(remoteInterface, "ERROR: Invalid Task Guide List: Duplicate Name");
         return;
     }
     validTaskList.insert(taskName,newGuide);
@@ -721,13 +721,13 @@ AgaveTaskGuide * AgaveHandler::retriveTaskGuide(QString taskID)
     AgaveTaskGuide * ret;
     if (!validTaskList.contains(taskID))
     {
-        qDebug("ERROR: Non-existant request requested.1");
+        qCDebug(remoteInterface, "ERROR: Non-existant request requested.");
         return NULL;
     }
     ret = validTaskList.value(taskID);
     if (taskID != ret->getTaskID())
     {
-        qDebug("ERROR: Task Guide format error.");
+        qCDebug(remoteInterface, "ERROR: Task Guide format error.");
     }
     return ret;
 }
@@ -756,7 +756,7 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
 {
     if (agaveReply->getTaskGuide()->getTaskID() == "authRevoke")
     {
-        qDebug("Auth revoke procedure complete");
+        qCDebug(remoteInterface, "Auth revoke procedure complete");
         clearAllAuthTokens();
         return;
     }
@@ -772,10 +772,7 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
         return;
     }
 
-    if (rawOutputDebugEnabled())
-    {
-        qDebug("%s",qPrintable(parseHandler.toJson()));
-    }
+    qCDebug(rawHTTP, "%s",qPrintable(parseHandler.toJson()));
 
     RequestState prelimResult = AgaveTaskReply::standardSuccessFailCheck(agaveReply->getTaskGuide(), &parseHandler);
 
@@ -899,7 +896,7 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
                 attemptingAuth = false;
 
                 forwardReplyToParent(agaveReply, RequestState::GOOD);
-                qDebug("Login success.");
+                qCDebug(remoteInterface, "Login success.");
             }
         }
         else
@@ -910,7 +907,7 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
     }
     else if (taskID == "authRefresh")
     {
-        qDebug("Auth refresh occurred without being implemented.");
+        qCDebug(remoteInterface, "Auth refresh occurred without being implemented.");
         forwardReplyToParent(agaveReply, RequestState::NOT_IMPLEMENTED);
 
         /*
@@ -930,7 +927,7 @@ void AgaveHandler::handleInternalTask(AgaveTaskReply * agaveReply, QNetworkReply
     }
     else
     {
-        qDebug("Non-existant internal request requested.");
+        qCDebug(remoteInterface, "Non-existant internal request requested.");
         forwardReplyToParent(agaveReply, RequestState::UNKNOWN_TASK);
     }
 }
@@ -955,7 +952,7 @@ AgaveTaskReply * AgaveHandler::performAgaveQuery(QString queryName, QMap<QString
 
     if ((performingShutdown) && (queryName != "authRevoke"))
     {
-        qDebug("Rejecting request given during shutdown.");
+        qCDebug(remoteInterface, "Rejecting request given during shutdown.");
         return NULL;
     }
 
@@ -1013,13 +1010,12 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
     if ((taskGuide->getRequestType() == AgaveRequestType::AGAVE_POST) || (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PUT))
     {
         //Note: For a put, the post data for this function is used as the put data for the HTTP request
-        //qDebug("Post data: %s", qPrintable(taskGuide->fillPostArgList(varList)));
         return finalizeAgaveRequest(taskGuide, taskGuide->getArgAndURLsuffix(varList),
                          authHeader, taskGuide->fillPostArgList(varList));
     }
     else if ((taskGuide->getRequestType() == AgaveRequestType::AGAVE_GET) || (taskGuide->getRequestType() == AgaveRequestType::AGAVE_DELETE))
     {
-        qDebug("URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
+        qCDebug(remoteInterface, "URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
         return finalizeAgaveRequest(taskGuide, taskGuide->getArgAndURLsuffix(varList),
                          authHeader);
     }
@@ -1033,7 +1029,7 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
             fileHandle->deleteLater();
             return NULL;
         }
-        qDebug("URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
+        qCDebug(remoteInterface, "URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
 
         return finalizeAgaveRequest(taskGuide, taskGuide->getArgAndURLsuffix(varList),
                          authHeader, fullFileName.toLatin1(), fileHandle);
@@ -1041,11 +1037,11 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
     else if (taskGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_UPLOAD)
     {
         QByteArray pipedFileData = varList->value("fileData");
-        qDebug("New File Name: %s\n", qPrintable(varList->value("newFileName")));
+        qCDebug(remoteInterface, "New File Name: %s\n", qPrintable(varList->value("newFileName")));
 
         AgavePipeBuffer * pipedData = new AgavePipeBuffer(&pipedFileData);
         pipedData->open(QBuffer::ReadOnly);
-        qDebug("URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
+        qCDebug(remoteInterface, "URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
 
         return finalizeAgaveRequest(taskGuide, taskGuide->getArgAndURLsuffix(varList),
                          authHeader, varList->value("newFileName"), pipedData);
@@ -1063,7 +1059,7 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
             return NULL;
         }
         fileHandle->deleteLater();
-        qDebug("URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
+        qCDebug(remoteInterface, "URL Req: %s", qPrintable(taskGuide->getArgAndURLsuffix(varList)));
 
         return finalizeAgaveRequest(taskGuide, taskGuide->getArgAndURLsuffix(varList),
                          authHeader);
@@ -1074,7 +1070,7 @@ QNetworkReply * AgaveHandler::distillRequestData(AgaveTaskGuide * taskGuide, QMa
     }
     else
     {
-        qDebug("ERROR: Non-existant Agave request type requested.");
+        qCDebug(remoteInterface, "ERROR: Non-existant Agave request type requested.");
         return NULL;
     }
 
@@ -1101,18 +1097,15 @@ QNetworkReply * AgaveHandler::finalizeAgaveRequest(AgaveTaskGuide * theGuide, QS
     {
         if (authHeader->isEmpty())
         {
-            qDebug("ERROR: Authorization request reply has no data in it");
+            qCDebug(remoteInterface, "ERROR: Authorization request reply has no data in it");
             return NULL;
         }
         clientRequest->setRawHeader(QByteArray("Authorization"), *authHeader);
     }
 
-    //Note: to suppress SSL warning for not having obsolete SSL versions, use
-    // QT_LOGGING_RULES in the project build environment variables. Set to:
-    // qt.network.ssl.warning=false
     clientRequest->setSslConfiguration(SSLoptions);
 
-    qDebug("%s", qPrintable(clientRequest->url().url()));
+    qCDebug(remoteInterface, "%s", qPrintable(clientRequest->url().url()));
 
     if ((theGuide->getRequestType() == AgaveRequestType::AGAVE_GET) || (theGuide->getRequestType() == AgaveRequestType::AGAVE_DOWNLOAD)
             || (theGuide->getRequestType() == AgaveRequestType::AGAVE_PIPE_DOWNLOAD))

@@ -140,7 +140,7 @@ void AgaveTaskReply::processDatalessReply(RequestState replyState)
 {   
     if (replyState != RequestState::GOOD)
     {
-        qDebug("Agave Task Fail: %s", qPrintable(RemoteDataInterface::interpretRequestState(replyState)));
+        qCDebug(remoteInterface, "Agave Task Fail: %s", qPrintable(RemoteDataInterface::interpretRequestState(replyState)));
     }
 
     if (myGuide->getTaskID() == "changeDir")
@@ -154,7 +154,7 @@ void AgaveTaskReply::processDatalessReply(RequestState replyState)
     else if (myGuide->getTaskID() == "authRefresh")
     {
         //TODO: Auth refresh needs to be implemented
-        qDebug("Auth refresh fail: Not yet implemented");
+        qCDebug(remoteInterface, "Auth refresh fail: Not yet implemented");
         return;
     }
     else if (myGuide->getTaskID() == "dirListing")
@@ -238,7 +238,7 @@ void AgaveTaskReply::rawTaskComplete()
 
     if ((myManager->inShutdownMode()) && (myGuide->getTaskID() != "authRevoke"))
     {
-        qDebug("Request during shutdown ignored");
+        qCDebug(remoteInterface, "Request during shutdown ignored");
         return;
     }
 
@@ -286,7 +286,7 @@ void AgaveTaskReply::rawTaskComplete()
         {
             processDatalessReply(RequestState::GENERIC_NETWORK_ERROR);
 
-            qDebug("Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
+            qCDebug(remoteInterface, "Network Error detected: %d : %s", testReply->error(), qPrintable(testReply->errorString()));
         }
         return;
     }
@@ -330,10 +330,7 @@ void AgaveTaskReply::rawTaskComplete()
         return;
     }
 
-    if (myManager->rawOutputDebugEnabled())
-    {
-        qDebug("%s", qPrintable(parseHandler.toJson()));
-    }
+    qCDebug(rawHTTP, "%s",qPrintable(parseHandler.toJson()));
 
     RequestState prelimResult = standardSuccessFailCheck(myGuide, &parseHandler);
 
@@ -699,7 +696,7 @@ void AgaveTaskReply::signalConnectDelay()
         failTrys++;
         if (failTrys > 10)
         {
-            qDebug("ERROR: Reply object finished before/without connection to rest of program.");
+            qCDebug(remoteInterface, "ERROR: Reply object finished before/without connection to rest of program.");
             return;
         }
         QThread::usleep(10);

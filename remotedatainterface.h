@@ -45,9 +45,13 @@
 #include <QMutexLocker>
 #include <QMap>
 #include <QJsonDocument>
+#include <QLoggingCategory>
 
 typedef QMap<QString, QString> ParamMap;
 Q_DECLARE_METATYPE(ParamMap)
+
+Q_DECLARE_LOGGING_CATEGORY(remoteInterface)
+Q_DECLARE_LOGGING_CATEGORY(rawHTTP)
 
 //Good means the request was good and
 //Fail means the remote service replied, but did not like the request, for some reason
@@ -141,12 +145,7 @@ public slots:
     virtual RemoteDataReply * getJobDetails(QString IDstr) = 0;
     virtual RemoteDataReply * stopJob(QString IDstr) = 0;
 
-    bool rawOutputDebugEnabled();
-    void setRawDebugOutput(bool newSetting);
     static QString interpretRequestState(RequestState theState);
-
-private:
-    bool showRawOutputInDebug = false;
 };
 
 class RemoteDataThread : public QThread
@@ -196,9 +195,6 @@ public:
     RemoteDataReply * getListOfJobs();
     RemoteDataReply * getJobDetails(QString IDstr);
     RemoteDataReply * stopJob(QString IDstr);
-
-    bool rawOutputDebugEnabled();
-    void setRawDebugOutput(bool newSetting);
 
 protected:
     //In subclass, run() method should point this to a
