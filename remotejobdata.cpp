@@ -76,6 +76,14 @@ QString RemoteJobData::getState() const
     return myState;
 }
 
+bool RemoteJobData::inTerminalState() const
+{
+    if (myState == "FINISHED") return true;
+    if (myState == "FAILED") return true;
+    if (myState == "STOPPED") return true;
+    return false;
+}
+
 void RemoteJobData::setState(QString newState)
 {
     myState = newState;

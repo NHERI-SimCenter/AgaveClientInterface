@@ -53,6 +53,7 @@ public:
     QDateTime getTimeCreated() const;
 
     QString getState() const;
+    bool inTerminalState() const;
     void setState(QString newState);
     void updateData(RemoteJobData newData);
 
