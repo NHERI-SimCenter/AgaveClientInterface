@@ -262,6 +262,10 @@ void AgaveTaskReply::rawTaskComplete()
         {
             processDatalessReply(RequestState::SERVICE_UNAVAILABLE);
         }
+        else if (testReply->error() == 401)
+        {
+            processDatalessReply(RequestState::REMOTE_SERVER_ERROR);
+        }
         else if (testReply->error() == 3)
         {
             processDatalessReply(RequestState::LOST_INTERNET);

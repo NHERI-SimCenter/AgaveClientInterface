@@ -70,6 +70,8 @@ QString RemoteDataInterface::interpretRequestState(RequestState theState)
         return "Invalid HTTP request";
     case RequestState::GENERIC_NETWORK_ERROR:
         return "Network error in remote request";
+    case RequestState::REMOTE_SERVER_ERROR:
+        return "Remote server has internal error";
     case RequestState::NOT_IMPLEMENTED:
         return "Feature Not Implemented";
     case RequestState::LOCAL_FILE_ERROR:
